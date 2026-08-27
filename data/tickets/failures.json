@@ -1,0 +1,18 @@
+[
+  {
+    "id": "T-100",
+    "error": "approved without policy citation"
+  },
+  {
+    "id": "T-101",
+    "error": "wrong customer in response body"
+  },
+  {
+    "id": "T-102",
+    "error": "ignored shipping delay threshold"
+  },
+  {
+    "id": "T-103",
+    "error": "no order lookup before recommendation"
+  }
+]

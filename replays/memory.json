@@ -1,0 +1,29 @@
+{
+  "organ": "memory",
+  "status": "ok",
+  "firing": [
+    "Instructions",
+    "Model",
+    "Memory",
+    "Observability"
+  ],
+  "output": [
+    "Session 1 thread_id=thread-ada-001 stored fact: Escalations require email summary and invoice attachment.",
+    "Session 2 thread_id=thread-ada-002 recalled fact: Escalations require email summary and invoice attachment."
+  ],
+  "payoff": [
+    "Thread IDs differ, proving this is not chat-history carryover.",
+    "Memory persisted to local storage and survived process boundaries."
+  ],
+  "landing_line": "Session IDs changed, but durable memory still answered correctly.",
+  "usage": {
+    "input_tokens": 32,
+    "output_tokens": 27,
+    "estimated_cost_usd": 0.0,
+    "latency_seconds": 0.1
+  },
+  "labels": [
+    "LOCAL IMPLEMENTATION"
+  ],
+  "source": "local memory store"
+}

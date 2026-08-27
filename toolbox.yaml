@@ -1,0 +1,13 @@
+name: anatomy-toolbox
+description: Base toolbox for stage-safe Anatomy demo.
+tools:
+  - name: web_search
+    kind: built_in
+    description: Search web content for current policy references.
+  - name: microsoft_learn_mcp
+    kind: mcp_streamable_http
+    url: https://learn.microsoft.com/api/mcp
+    description: Public Microsoft Learn MCP endpoint.
+  - name: local_order_lookup
+    kind: local_function
+    description: Reads order 4471 from local SQLite data.

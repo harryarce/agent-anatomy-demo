@@ -1,0 +1,31 @@
+{
+  "organ": "reflex_arc",
+  "status": "ok",
+  "firing": [
+    "Reflex Arc",
+    "Tools",
+    "Observability"
+  ],
+  "output": [
+    "woke at 14:04:02 - nobody typed anything",
+    "Drop trigger observed: escalation-4471.csv",
+    "Event payload: order_id,customer,event\n4471,Contoso,refund_requested",
+    "Result written to dropbox/result.txt",
+    "Timer variant: schedule 'python -m anatomy demo reflex' for unattended polling."
+  ],
+  "payoff": [
+    "Activation is event-driven from the local filesystem.",
+    "This is a local analog of cloud routines and autonomous triggers."
+  ],
+  "landing_line": "Nobody typed anything, and Ada still woke up and acted.",
+  "usage": {
+    "input_tokens": 19,
+    "output_tokens": 21,
+    "estimated_cost_usd": 0.0,
+    "latency_seconds": 0.1
+  },
+  "labels": [
+    "LOCAL IMPLEMENTATION"
+  ],
+  "source": "local filesystem trigger"
+}

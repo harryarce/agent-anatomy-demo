@@ -1,0 +1,26 @@
+{
+  "organ": "model",
+  "status": "ok",
+  "firing": [
+    "Instructions",
+    "Model",
+    "Observability",
+    "Metabolism"
+  ],
+  "output": [
+    "I can confirm only that Contoso is requesting a refund for order 4471. The appropriate action depends on information not provided.\n\nCheck:\n- Whether order 4471 exists and belongs to Contoso\n- Order status (fulfilled, delivered, cancelled, returned, etc.)\n- Applicable refund policy, contract terms, and refund window\n- Payment method and amount paid\n- Whether a return, credit, prior refund, dispute, or chargeback is already in progress\n- Required approval level and refund reason/evidence\n\nIf the request meets the applicable policy and approval requirements, process the refund through the original payment method and document the decision. If it does not, explain the applicable policy or escalate for an exception review."
+  ],
+  "payoff": [
+    "Ada answered using live Azure deployment gpt-5.6-terra.",
+    "Without policy or order evidence, the answer remains tentative."
+  ],
+  "landing_line": "A brain can answer, but without organs it cannot know whether its answer is true.",
+  "usage": {
+    "input_tokens": 44,
+    "output_tokens": 201,
+    "estimated_cost_usd": 0.0,
+    "latency_seconds": 23.443646499999886
+  },
+  "labels": [],
+  "source": "live Azure deployment gpt-5.6-terra"
+}

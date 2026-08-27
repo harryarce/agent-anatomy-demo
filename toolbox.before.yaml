@@ -1,0 +1,9 @@
+name: anatomy-toolbox
+description: Baseline toolbox for beat 2.
+tools:
+  - name: web_search
+    kind: built_in
+    description: Search web content.
+  - name: local_order_lookup
+    kind: local_function
+    description: Reads order information from local SQLite.

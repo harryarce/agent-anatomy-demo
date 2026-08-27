@@ -1,0 +1,32 @@
+{
+  "organ": "skills",
+  "status": "ok",
+  "firing": [
+    "Instructions",
+    "Model",
+    "Skills",
+    "Observability"
+  ],
+  "output": [
+    "Advertised skills:",
+    "- house-style",
+    "- pdf-summary",
+    "- triage-checklist",
+    "Progressive disclosure cost: advertise=210 load=122"
+  ],
+  "payoff": [
+    "The skills are discoverable before they are loaded.",
+    "Loading on demand lowers token overhead for routine turns."
+  ],
+  "landing_line": "Skills are scaffolding on demand: advertise cheap, load when needed.",
+  "usage": {
+    "input_tokens": 210,
+    "output_tokens": 122,
+    "estimated_cost_usd": 0.0,
+    "latency_seconds": 0.1
+  },
+  "labels": [
+    "LOCAL IMPLEMENTATION"
+  ],
+  "source": "local skill catalog"
+}

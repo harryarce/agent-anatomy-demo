@@ -1,0 +1,32 @@
+{
+  "organ": "learning",
+  "status": "ok",
+  "firing": [
+    "Learning",
+    "Observability",
+    "Metabolism"
+  ],
+  "output": [
+    "Training set size: 4 failed tickets.",
+    "Before success rate: 1/4",
+    "After success rate: 3/4",
+    "Instruction diff:",
+    "- Decide refunds quickly from prior examples.",
+    "+ Decide refunds only after policy citation and order lookup."
+  ],
+  "payoff": [
+    "The update is explicit and measurable, not hand-wavy tuning.",
+    "Agent Optimizer cloud service is not invoked in this local implementation."
+  ],
+  "landing_line": "The scaffold changed, and measurable success improved.",
+  "usage": {
+    "input_tokens": 53,
+    "output_tokens": 46,
+    "estimated_cost_usd": 0.0,
+    "latency_seconds": 0.1
+  },
+  "labels": [
+    "LOCAL IMPLEMENTATION"
+  ],
+  "source": "local critic loop"
+}

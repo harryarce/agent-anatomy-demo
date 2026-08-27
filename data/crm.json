@@ -1,0 +1,14 @@
+[
+  {
+    "id": "cust-contoso",
+    "name": "Contoso",
+    "tier": "enterprise",
+    "region": "NA"
+  },
+  {
+    "id": "cust-tailspin",
+    "name": "Tailspin Toys",
+    "tier": "standard",
+    "region": "EU"
+  }
+]

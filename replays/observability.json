@@ -1,0 +1,31 @@
+{
+  "organ": "observability",
+  "status": "ok",
+  "firing": [
+    "Observability",
+    "Metabolism"
+  ],
+  "output": [
+    "Span tree (local console exporter):",
+    "root 120ms",
+    "  lookup_policy 33ms tokens=22",
+    "  lookup_order 27ms tokens=18",
+    "  draft_response 60ms tokens=41",
+    "App Insights exporter: [WARN] not configured locally"
+  ],
+  "payoff": [
+    "The span tree is deterministic and stage-safe.",
+    "Cloud export is optional and honestly marked as a warning when absent."
+  ],
+  "landing_line": "Even with no portal access, local traces prove the execution path.",
+  "usage": {
+    "input_tokens": 26,
+    "output_tokens": 17,
+    "estimated_cost_usd": 0.0,
+    "latency_seconds": 0.1
+  },
+  "labels": [
+    "LOCAL IMPLEMENTATION"
+  ],
+  "source": "local trace renderer"
+}

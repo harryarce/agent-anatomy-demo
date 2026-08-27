@@ -1,0 +1,28 @@
+{
+  "organ": "metabolism",
+  "status": "ok",
+  "firing": [
+    "Metabolism",
+    "Observability"
+  ],
+  "output": [
+    "step 1: spend=80 tokens $0.0060",
+    "step 2: spend=170 tokens $0.0120",
+    "BUDGET STOP: Charge denied: would reach 290 tokens and $0.0180."
+  ],
+  "payoff": [
+    "A hard cap is enforced in-process and visible in the transcript.",
+    "The run terminates deterministically at the same budget boundary."
+  ],
+  "landing_line": "Budget policy stopped the run before spend escaped control.",
+  "usage": {
+    "input_tokens": 85,
+    "output_tokens": 85,
+    "estimated_cost_usd": 0.012,
+    "latency_seconds": 0.1
+  },
+  "labels": [
+    "LOCAL IMPLEMENTATION"
+  ],
+  "source": "local budget meter"
+}

@@ -1,0 +1,35 @@
+{
+  "organ": "orchestration",
+  "status": "ok",
+  "firing": [
+    "Instructions",
+    "Model",
+    "Knowledge",
+    "Tools",
+    "Orchestration",
+    "Observability"
+  ],
+  "output": [
+    "Workflow graph:",
+    "researcher -> writer -> reviewer",
+    "reviewer --(needs citation)--> writer",
+    "Node researcher: found order delay evidence and policy clause.",
+    "Node writer: drafted response with refund recommendation.",
+    "Node reviewer: approved after citation check."
+  ],
+  "payoff": [
+    "Each node had one job and exposed a visible decision boundary.",
+    "Conditional routing prevented an uncited response from shipping."
+  ],
+  "landing_line": "Workflow separation made each handoff visible and auditable.",
+  "usage": {
+    "input_tokens": 66,
+    "output_tokens": 52,
+    "estimated_cost_usd": 0.0,
+    "latency_seconds": 0.1
+  },
+  "labels": [
+    "LOCAL IMPLEMENTATION"
+  ],
+  "source": "local workflow simulation"
+}

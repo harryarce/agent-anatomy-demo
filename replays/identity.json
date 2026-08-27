@@ -1,0 +1,31 @@
+{
+  "organ": "identity",
+  "status": "ok",
+  "firing": [
+    "Instructions",
+    "Model",
+    "Identity",
+    "Observability"
+  ],
+  "output": [
+    "[SIMULATED] Data-plane operation with per-agent identity: blob write attempted.",
+    "Decoded token claims: oid=11111111-2222-3333-4444-555555555555 appid=66666666-7777-8888-9999-aaaaaaaaaaaa",
+    "Secret hygiene check: checked 1 env-style files",
+    "[SIMULATED] Unauthorized call result: HTTP 403 Forbidden (expected)."
+  ],
+  "payoff": [
+    "This demo is explicitly simulated because Blob RBAC is cloud-only.",
+    "The no-secrets property still holds locally and is verifiable."
+  ],
+  "landing_line": "Identity is explicit: no keys in repo, and denied calls fail cleanly.",
+  "usage": {
+    "input_tokens": 29,
+    "output_tokens": 23,
+    "estimated_cost_usd": 0.0,
+    "latency_seconds": 0.1
+  },
+  "labels": [
+    "SIMULATED"
+  ],
+  "source": "simulated local identity walkthrough"
+}

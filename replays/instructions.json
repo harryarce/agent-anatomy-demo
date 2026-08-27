@@ -1,0 +1,29 @@
+{
+  "organ": "instructions",
+  "status": "ok",
+  "firing": [
+    "Instructions",
+    "Model"
+  ],
+  "output": [
+    "Persona answers (same question, same model):",
+    "- terse_expert: Approve only after evidence. Do not issue refund until order and policy are verified.",
+    "- patient_teacher: Step 1: confirm order 4471 and delivery timeline. Step 2: cite policy clause before deciding.",
+    "- hostile_reviewer: Current evidence is insufficient. Any confident refund claim is a process defect.",
+    "Fabricated baseline failure: 'Section 4.2 guarantees full refunds for any delay.'",
+    "(This line is intentionally incorrect to tee up Knowledge in beat 1.)"
+  ],
+  "payoff": [
+    "Instruction variants were loaded from separate files.",
+    "The visible fabricated policy claim creates the failure that Knowledge fixes next."
+  ],
+  "landing_line": "The model is the same; instructions changed behavior immediately.",
+  "usage": {
+    "input_tokens": 58,
+    "output_tokens": 72,
+    "estimated_cost_usd": 0.0,
+    "latency_seconds": 0.1
+  },
+  "labels": [],
+  "source": "local deterministic instruction variant demo"
+}

@@ -1,0 +1,12 @@
+name: anatomy-toolbox
+description: Toolbox with added carrier delay tool for beat 3.
+tools:
+  - name: web_search
+    kind: built_in
+    description: Search web content.
+  - name: local_order_lookup
+    kind: local_function
+    description: Reads order information from local SQLite.
+  - name: carrier_delay_status
+    kind: local_function
+    description: Returns carrier fault context for delayed shipments.

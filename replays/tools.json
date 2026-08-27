@@ -1,0 +1,33 @@
+{
+  "organ": "tools",
+  "status": "ok",
+  "firing": [
+    "Instructions",
+    "Model",
+    "Knowledge",
+    "Tools",
+    "Observability"
+  ],
+  "output": [
+    "Discovered tools:",
+    "- web_search",
+    "- local_order_lookup",
+    "- carrier_delay_status",
+    "SQLite lookup: order 4471 customer=Contoso days_late=9 status=delivered",
+    "Added with zero code change:",
+    "+ carrier_delay_status"
+  ],
+  "payoff": [
+    "Order facts came from SQLite instead of prompt memory.",
+    "Beat 3 proves capability changed by toolbox config, not source code."
+  ],
+  "landing_line": "Tools turned a guess into a lookup, and adding a tool changed behavior without code edits.",
+  "usage": {
+    "input_tokens": 78,
+    "output_tokens": 64,
+    "estimated_cost_usd": 0.0,
+    "latency_seconds": 0.2
+  },
+  "labels": [],
+  "source": "local toolbox and sqlite lookup"
+}

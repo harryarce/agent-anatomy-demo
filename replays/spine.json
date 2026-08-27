@@ -1,0 +1,30 @@
+{
+  "organ": "spine",
+  "status": "ok",
+  "firing": [
+    "Spine",
+    "Orchestration",
+    "Observability"
+  ],
+  "output": [
+    "RUN  validate_order at 2026-08-26T13:53:50",
+    "RUN  apply_policy at 2026-08-26T13:53:50",
+    "RUN  create_refund_draft at 2026-08-26T13:53:50",
+    "RUN  queue_finance_action at 2026-08-26T13:53:50"
+  ],
+  "payoff": [
+    "Completed step timestamps prove resume did not re-execute prior work.",
+    "Checkpoint semantics are local and deterministic for wifi-safe demos."
+  ],
+  "landing_line": "Resume continued from checkpoint without re-running completed steps.",
+  "usage": {
+    "input_tokens": 16,
+    "output_tokens": 32,
+    "estimated_cost_usd": 0.0,
+    "latency_seconds": 0.1
+  },
+  "labels": [
+    "LOCAL IMPLEMENTATION"
+  ],
+  "source": "local checkpoint storage"
+}
