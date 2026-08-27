@@ -10,12 +10,12 @@
     "woke at 14:04:02 - nobody typed anything",
     "Drop trigger observed: escalation-4471.csv",
     "Event payload: order_id,customer,event\n4471,Contoso,refund_requested",
-    "Result written to dropbox/result.txt",
+    "Result written to onedrive/result.txt",
     "Timer variant: schedule 'python -m anatomy demo reflex' for unattended polling."
   ],
   "payoff": [
     "Activation is event-driven from the local filesystem.",
-    "This is a local analog of cloud routines and autonomous triggers."
+    "This is a local analog of a OneDrive or SharePoint file-created event handled by Logic Apps or Power Automate."
   ],
   "landing_line": "Nobody typed anything, and Ada still woke up and acted.",
   "usage": {

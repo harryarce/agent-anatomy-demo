@@ -142,7 +142,7 @@ class LocalScenarioDataTests(unittest.TestCase):
 
     def test_reflex_arc_processes_drop_event(self) -> None:
         module = importlib.import_module("anatomy.organs.o11_reflex_arc")
-        result_path = self.root / "dropbox" / "result.txt"
+        result_path = self.root / "onedrive" / "result.txt"
         result_path.unlink(missing_ok=True)
         report = asyncio.run(
             module.run(

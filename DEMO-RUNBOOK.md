@@ -2,6 +2,8 @@
 
 This document explains how to prepare, validate, and run every Ada demo from Windows PowerShell. Run all commands from the `agent-anatomy-lab` directory.
 
+For the fullscreen show controls, 45-minute route, and presenter recovery flow, use [DEMO-SHOW.md](DEMO-SHOW.md).
+
 ## 1. Choose a Demo Mode
 
 | Mode | Use it when | Network | Command pattern |
@@ -61,8 +63,8 @@ Replay and local demos do not require Azure authentication. For the live Model d
 
 ```powershell
 az login
-$env:FOUNDRY_PROJECT_ENDPOINT = "https://haro-foundryai.services.ai.azure.com/api/projects/aiprj"
-$env:FOUNDRY_MODEL = "gpt-5.6-terra"
+$env:FOUNDRY_PROJECT_ENDPOINT = "https://<resource>.services.ai.azure.com/api/projects/<project>"
+$env:FOUNDRY_MODEL = "<deployment-name>"
 ```
 
 The application uses `AzureCliCredential`, so the active `az login` identity is used. No API key is needed or stored.
@@ -83,7 +85,7 @@ Run these before every rehearsal or presentation:
 
 ```powershell
 python -m pip check
-python -m unittest discover -s tests -v
+python -m unittest tests.test_organs tests.test_show -v
 python -m compileall -q anatomy scripts tests
 python -m anatomy preflight
 python -m anatomy list
@@ -92,7 +94,7 @@ python -m anatomy list
 Success criteria:
 
 - `pip check` reports no broken requirements.
-- Seven unit tests pass.
+- The full unit test suite passes.
 - `compileall` exits without output.
 - Required preflight rows show `PASS`.
 - An App Insights `WARN` is acceptable when cloud export is not configured.
@@ -100,13 +102,46 @@ Success criteria:
 
 ## 5. Fastest Safe Stage Run
 
-Reset the visual state and run the complete story from committed transcripts:
+The complete operator instructions are in [DEMO-SHOW.md](DEMO-SHOW.md). The essential launch path is repeated here for recovery convenience.
+
+Launch the fullscreen terminal show:
+
+```powershell
+python -m anatomy show
+```
+
+This is the primary presentation path. It opens in stage-safe mode and keeps one scene on screen at a time.
+
+| Key | Stage action |
+|---|---|
+| `Left` / `Right` | Move between scenes |
+| `Space` | Run the current scene's evidence |
+| `R` | Switch between stage-safe and live/local execution |
+| `Home` / `End` | Jump to the opening or resources |
+| `Esc` | Cancel the active command without starting a fallback |
+| `Q` | Exit the show |
+
+Use the live Foundry path when preflight is green:
+
+```powershell
+python -m anatomy show --live
+```
+
+Resume at the Spine climax during rehearsal or recovery:
+
+```powershell
+python -m anatomy show --from 13
+```
+
+Scene 14 prepares the deterministic kill automatically if its checkpoint is absent. Live command failures fall back to the scene's committed evidence; the intentional Spine exit code `1` is treated as expected proof.
+
+Universal scrolling fallback:
 
 ```powershell
 python -m anatomy present --replay --reset
 ```
 
-This is the safest full presentation path. Presenter mode automatically uses projection-width panels and adds five teaching cues to every organ:
+Presenter mode uses projection-width panels and adds five teaching cues to every organ:
 
 1. **Evolution** names the capability's role in the progression of agentic systems.
 2. **Milestone** explains what became possible.
@@ -193,19 +228,19 @@ python -m anatomy demo spine --replay --stage
 
 ### Slot 4: Closing callback
 
-The repository includes `dropbox/escalation-4471.csv`. Run:
+The repository includes `onedrive/escalation-4471.csv`. Run:
 
 ```powershell
-Remove-Item dropbox\result.txt -ErrorAction SilentlyContinue
+Remove-Item onedrive\result.txt -ErrorAction SilentlyContinue
 python -m anatomy beat 12 --stage
-Get-Content dropbox\result.txt
+Get-Content onedrive\result.txt
 ```
 
 Expected evidence:
 
 - Ada prints the wake time and `nobody typed anything`.
-- The input event is read from `dropbox/escalation-4471.csv`.
-- `dropbox/result.txt` contains the processed event and decision.
+- The input event is read from `onedrive/escalation-4471.csv`.
+- `onedrive/result.txt` contains the processed event and decision.
 
 Offline fallback:
 
@@ -334,7 +369,7 @@ python -m anatomy demo learning
 
 ### Beat 12: Reflex Arc
 
-Use the file-trigger sequence in Section 6. To demonstrate a different event, add a UTF-8 PDF or CSV to `dropbox/`; the latest file by modification time is processed. `result.txt` is excluded from trigger selection.
+Use the file-trigger sequence in Section 6. To demonstrate a different event, add a UTF-8 PDF or CSV to `onedrive/`; the latest file by modification time is processed. `result.txt` is excluded from trigger selection. The folder is a local stand-in for a OneDrive or SharePoint document library; in production the same organ is driven by a file-created event through Logic Apps or Power Automate.
 
 ## 8. Autopsy: Remove One Organ
 
@@ -387,7 +422,7 @@ Replay mode should work without Azure credentials or network access.
 | `.anatomy-state.json` | Lit organs in the vitals panel | Yes |
 | `.anatomy-memory.json` | Local durable memory | Yes |
 | `.anatomy-spine-checkpoint.json` | Spine checkpoint | Yes, before starting kill/resume |
-| `dropbox/result.txt` | Reflex Arc output | Yes |
+| `onedrive/result.txt` | Reflex Arc output | Yes |
 | `replays/*.json` | Committed offline transcripts | No, unless intentionally re-recording |
 
 Reset all transient demo state:
@@ -396,7 +431,7 @@ Reset all transient demo state:
 Remove-Item .anatomy-state.json -ErrorAction SilentlyContinue
 Remove-Item .anatomy-memory.json -ErrorAction SilentlyContinue
 Remove-Item .anatomy-spine-checkpoint.json -ErrorAction SilentlyContinue
-Remove-Item dropbox\result.txt -ErrorAction SilentlyContinue
+Remove-Item onedrive\result.txt -ErrorAction SilentlyContinue
 ```
 
 `--reset` clears only the visual vitals state for that command. It does not remove memory or checkpoint files.
@@ -472,5 +507,5 @@ $OutputEncoding = [System.Text.UTF8Encoding]::new()
 4. Confirm live Model access if it will be used.
 5. Reset transient state.
 6. Rehearse Spine kill/resume once.
-7. Confirm `dropbox/escalation-4471.csv` exists.
+7. Confirm `onedrive/escalation-4471.csv` exists.
 8. Keep `python -m anatomy present --replay --reset` ready as the universal fallback.

@@ -2,7 +2,7 @@
 
 Ada is assembled on stage as one agent with independently runnable organs.
 
-For setup, every demo command, expected output, stage sequencing, and recovery steps, see [DEMO-RUNBOOK.md](DEMO-RUNBOOK.md).
+For the fullscreen presentation, start with [DEMO-SHOW.md](DEMO-SHOW.md). For every individual demo command, expected output, and detailed recovery step, see [DEMO-RUNBOOK.md](DEMO-RUNBOOK.md).
 
 ## Quickstart
 
@@ -12,15 +12,22 @@ python -m venv .venv
 python -m pip install -r requirements.txt
 python scripts/setup_data.py
 python -m anatomy preflight
-python -m anatomy present --replay --reset
+python -m anatomy show
 ```
 
-`present` is the recommended audience experience. Every organ is introduced with its place in agent evolution, the failure it fixes, what to watch, a before/after contrast, and a speaker-ready landing line.
+`show` is the recommended audience experience: an 18-scene fullscreen terminal deck with organ vitals, keyboard navigation, executable evidence, live-to-replay recovery, and per-organ code exhibits. Press `Space` to run a scene, `C` to show or hide the code behind that organ, `Left`/`Right` to navigate, and `R` to switch between stage-safe and live/local execution.
+
+The stage-safe default uses committed evidence for network-sensitive moments. Start with `python -m anatomy show --live` when the Foundry connection is ready. The scrolling `present` command remains the universal fallback.
+
+The recommended 45-minute route runs selected evidence while presenting the remaining scenes without execution. See [DEMO-SHOW.md](DEMO-SHOW.md#recommended-45-minute-route) for timings.
 
 ## Core commands
 
 ```powershell
 python -m anatomy list
+python -m anatomy show
+python -m anatomy show --live
+python -m anatomy show --from 13
 python -m anatomy present --replay --reset
 python -m anatomy beat 0 --replay
 python -m anatomy beat 3 --replay

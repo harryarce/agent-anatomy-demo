@@ -2,7 +2,16 @@
 __pycache__/
 *.py[cod]
 .env
-.anatomy-state.json
-.anatomy-memory.json
-.anatomy-spine-checkpoint.json
-dropbox/result.txt
+
+# Demo state written while organs run
+.anatomy-*.json
+
+# Reflex Arc: keep the seeded trigger, ignore anything dropped or produced on stage
+onedrive/*.*
+!onedrive/escalation-4471.csv
+
+# Test and coverage artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+

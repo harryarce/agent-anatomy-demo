@@ -11,11 +11,11 @@ FAILURE_IT_FIXES = "Ada required a human prompt and could not react to external 
 LANDING_LINE = "Nobody typed anything, and Ada still woke up and acted."
 
 
-def _latest_dropbox_file() -> Path | None:
-    dropbox = Path(__file__).resolve().parents[2] / "dropbox"
-    dropbox.mkdir(parents=True, exist_ok=True)
+def _latest_synced_file() -> Path | None:
+    synced_folder = Path(__file__).resolve().parents[2] / "onedrive"
+    synced_folder.mkdir(parents=True, exist_ok=True)
     files = sorted(
-        (item for item in dropbox.glob("*") if item.is_file() and item.name != "result.txt"),
+        (item for item in synced_folder.glob("*") if item.is_file() and item.name != "result.txt"),
         key=lambda item: item.stat().st_mtime,
         reverse=True,
     )
@@ -40,11 +40,11 @@ async def run(
         return load_report_replay("reflex_arc")
 
     woke_at = datetime.now().strftime("%H:%M:%S")
-    latest = _latest_dropbox_file()
+    latest = _latest_synced_file()
     output = [f"woke at {woke_at} - nobody typed anything"]
     if latest is None:
         status = "fail"
-        output.append("No drop event found; add a PDF or CSV to dropbox/ and run again.")
+        output.append("No drop event found; add a PDF or CSV to onedrive/ and run again.")
     else:
         event = latest.read_text(encoding="utf-8").strip()
         result_path = latest.parent / "result.txt"
@@ -57,7 +57,7 @@ async def run(
             [
                 f"Drop trigger observed: {latest.name}",
                 f"Event payload: {event}",
-                "Result written to dropbox/result.txt",
+                "Result written to onedrive/result.txt",
             ]
         )
     output.append("Timer variant: schedule 'python -m anatomy demo reflex' for unattended polling.")
@@ -72,7 +72,7 @@ async def run(
         output=output,
         payoff=[
             "Activation is event-driven from the local filesystem.",
-            "This is a local analog of cloud routines and autonomous triggers.",
+            "This is a local analog of a OneDrive or SharePoint file-created event handled by Logic Apps or Power Automate.",
         ],
         landing_line=LANDING_LINE,
         usage=Usage(input_tokens=19, output_tokens=21, estimated_cost_usd=0.0, latency_seconds=0.1),

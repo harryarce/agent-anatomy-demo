@@ -234,6 +234,10 @@ def build_parser() -> argparse.ArgumentParser:
     present = subparsers.add_parser("present", help="run the full story with audience-facing teaching frames")
     present.add_argument("--from", dest="from_beat", type=int, default=0)
 
+    show = subparsers.add_parser("show", help="launch the fullscreen, keyboard-driven live presentation")
+    show.add_argument("--from", dest="from_scene", type=int, choices=range(1, 19), default=1)
+    show.add_argument("--live", action="store_true", help="prefer live and local execution over committed evidence")
+
     demo = subparsers.add_parser("demo")
     demo.add_argument("organ")
 
@@ -275,6 +279,10 @@ def main() -> int:
         args.present = True
         args.stage = True
         return asyncio.run(run_story(args))
+    if args.command == "show":
+        from anatomy.show import run_show
+
+        return run_show(start_scene=args.from_scene, live=args.live)
     if args.command == "spine":
         return asyncio.run(_run_one("spine", args, beat=10))
     if args.command == "tools":

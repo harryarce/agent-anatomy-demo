@@ -1,6 +1,8 @@
 # Demo Script
 
-For the full audience-facing narrative, run `python -m anatomy present --replay --reset`. The command embeds the historical framing, failure, proof to watch, before/after contrast, and landing line directly in the terminal UI.
+For the full audience-facing narrative, run `python -m anatomy show`. The fullscreen terminal deck opens with Harry Arce's introduction, cold-opens on the Reflex Arc, actively runs evidence with `Space`, stages the Spine kill/resume climax, labels Opposable Thumbs and Face as planned, and closes on verified public resources. Press `R` for live/local execution. Keep `python -m anatomy present --replay --reset` ready as the scrolling fallback.
+
+Use [DEMO-SHOW.md](DEMO-SHOW.md) for setup, controls, the recommended 45-minute route, and recovery. The table below remains the command-level speaking reference.
 
 | Beat | Command | Before line | Audience sees | Landing line | Target | Fallback |
 |---|---|---|---|---|---|---|
