@@ -19,7 +19,7 @@ Before each presentation:
 ```powershell
 python -m pip check
 python -m anatomy preflight
-python -m unittest tests.test_organs tests.test_show
+python -m unittest discover -s tests
 ```
 
 Warnings for an unconfigured Foundry endpoint, model, or Application Insights connection are acceptable when using stage-safe mode. Required local data and replay checks must pass.
@@ -28,7 +28,6 @@ Warnings for an unconfigured Foundry endpoint, model, or Application Insights co
 
 The show never hardcodes a version number. Every version is read from installed package metadata at runtime:
 
-- Each framework code exhibit is labelled with its package and resolved version, for example `agent_framework  v1.14.0`.
 - Scene 18 opens on a stack panel listing Python and every major dependency with its live version.
 
 A test asserts that each `==` pin in `requirements.txt` matches the installed version, so the stack panel can never drift from what is actually installed.
@@ -93,19 +92,17 @@ Wait for `EVIDENCE COMPLETE` before advancing. Presenter-only scenes do not run 
 
 ## Code Exhibits
 
-Every organ scene carries code exhibits, hidden by default so the narrative stays clean. Press `C` to reveal one, press `C` again to advance, and press `C` once more to hide them.
+Every organ scene carries a code exhibit, hidden by default so the narrative stays clean. Press `C` to reveal it, press `C` again to advance when a scene has another exhibit, and continue until the exhibit closes.
 
-Exhibits are **paired**. Most organ scenes lead with the real Microsoft Agent Framework attachment point, then show how this project uses it:
+Every snippet is application code from `examples/organ_recipes.py` or developer-owned configuration from `toolbox.add-tool.yaml`. The audience sees the public attachment point they can adapt, never internal framework implementation from `site-packages`.
 
-| Label | Source |
-|---|---|
-| `agent_framework  v1.14.0` | The installed framework, read from `site-packages` at display time |
-| `agent_framework_foundry  v…` | The installed Foundry connector (`FoundryChatClient`, `FoundryMemoryProvider`, `FoundryEvals`) |
-| `THIS PROJECT` | Ada's own organ code in this repository |
+Each exhibit shows the file path, a short recipe with line numbers and the decisive line marked, then three audience cues:
 
-Each exhibit shows the file path, the source with line numbers and the decisive line marked, then `WHAT IT DOES` and `WHY IT MATTERS`.
+- `WHAT IT DOES` explains the code mechanism.
+- `WHY IT MATTERS` connects the mechanism to dependable agent behavior.
+- `COPILOT STUDIO` names the corresponding low-code component or configuration surface.
 
-The headline exhibit is scene 3, exhibit 1: `BaseAgent.__init__`. Its parameter list — `instructions`, `tools`, `context_providers`, `middleware` — is literally the anatomy being dissected. Open it and read the parameter names aloud.
+The headline exhibit is scene 17: `compose_agent`. Its `instructions`, `tools`, `context_providers`, and `middleware` arguments are the anatomy being assembled through public APIs. Open it and read the attachment points aloud.
 
 All exhibits are anchored to a line that must appear exactly once in its file, and a test asserts this, so a snippet can never drift from the code that actually ran.
 
@@ -166,7 +163,7 @@ The Spine kill intentionally returns exit code 1. In the show, this is displayed
 
 1. Maximize the terminal and confirm all 16 organ labels fit in the left rail.
 2. Launch `python -m anatomy show` and practice the 45-minute route above.
-3. Press `C` on scene 3 and confirm all three exhibits render without wrapping badly.
+3. Press `C` on scene 3 and confirm the developer recipe and `COPILOT STUDIO` explanation render without wrapping badly.
 4. Confirm scene 2 reaches `EVIDENCE COMPLETE`.
 5. Confirm scenes 13 and 14 display the expected kill followed by `SKIP` for completed steps.
 6. Confirm scene 18 displays the live stack panel and the three public resource shortcuts.

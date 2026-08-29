@@ -75,27 +75,18 @@ class CodeExhibitTests(unittest.TestCase):
                     self.assertGreaterEqual(focus_line, start_line)
                     self.assertTrue(exhibit.read_this)
 
-    def test_project_exhibits_live_in_the_repository(self) -> None:
+    def test_exhibits_are_developer_recipes_in_the_repository(self) -> None:
         for exhibits in EXHIBITS.values():
             for exhibit in exhibits:
-                if exhibit.package is None:
-                    with self.subTest(path=exhibit.path):
-                        self.assertTrue((ROOT / exhibit.path).exists())
-                        self.assertEqual(exhibit.provenance, "THIS PROJECT")
+                with self.subTest(path=exhibit.path):
+                    self.assertTrue((ROOT / exhibit.path).exists())
+                    self.assertEqual(exhibit.provenance, "DEVELOPER RECIPE")
+                    self.assertNotIn("site-packages", exhibit.display_path)
 
-    def test_framework_exhibits_are_attributed_to_installed_packages(self) -> None:
-        framework = [e for group in EXHIBITS.values() for e in group if e.package is not None]
+    def test_whole_anatomy_recipe_names_every_attachment_point(self) -> None:
+        signature, _, _ = load_exhibit(EXHIBITS[17][0])
 
-        self.assertTrue(framework)
-        for exhibit in framework:
-            with self.subTest(path=exhibit.display_path):
-                self.assertIn(exhibit.package, {"agent_framework", "agent_framework_foundry"})
-                self.assertNotIn("installed", exhibit.provenance)
-
-    def test_the_anatomy_signature_names_every_attached_organ(self) -> None:
-        signature, _, _ = load_exhibit(EXHIBITS[3][0])
-
-        for parameter in ("instructions:", "tools:", "context_providers:", "middleware:"):
+        for parameter in ("instructions=", "tools=", "context_providers=", "middleware="):
             self.assertIn(parameter, signature)
 
     def test_python_snippets_are_mostly_code_not_docstrings(self) -> None:
@@ -134,6 +125,12 @@ class CodeExhibitTests(unittest.TestCase):
         demo_scenes = {scene.number for scene in SCENES if scene.safe_steps}
 
         self.assertEqual(demo_scenes - set(EXHIBITS), set())
+
+    def test_exhibits_include_copilot_studio_guidance(self) -> None:
+        for scene_number, exhibits in EXHIBITS.items():
+            for exhibit in exhibits:
+                with self.subTest(scene=scene_number, title=exhibit.title):
+                    self.assertTrue(exhibit.copilot_studio)
 
 
 class StackReportTests(unittest.TestCase):
@@ -189,16 +186,9 @@ class ShowInteractionTests(unittest.IsolatedAsyncioTestCase):
             await pilot.press("c")
             self.assertEqual(app.exhibit_index, 0)
             self.assertIn("CODE EXHIBIT", self.rendered_log(app))
-            self.assertIn("agent_framework", self.rendered_log(app))
-            self.assertIn("context_providers", self.rendered_log(app))
-
-            await pilot.press("c")
-            self.assertEqual(app.exhibit_index, 1)
-            self.assertIn("THIS PROJECT", self.rendered_log(app))
-            self.assertIn("Agent(", self.rendered_log(app))
-
-            await pilot.press("c")
-            self.assertEqual(app.exhibit_index, 2)
+            self.assertIn("DEVELOPER RECIPE", self.rendered_log(app))
+            self.assertIn("instructions=", self.rendered_log(app))
+            self.assertIn("COPILOT STUDIO", self.rendered_log(app))
 
             await pilot.press("c")
             self.assertIsNone(app.exhibit_index)

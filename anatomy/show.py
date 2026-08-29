@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import importlib.util
 import os
 import sys
 from dataclasses import dataclass
@@ -36,20 +35,18 @@ class CodeExhibit:
     language: str
     mechanism: str
     read_this: tuple[str, ...]
+    copilot_studio: str = ""
     before: int = 2
     after: int = 6
-    package: str | None = None
     within: str | None = None
 
     @property
     def provenance(self) -> str:
-        if self.package is None:
-            return "THIS PROJECT"
-        return f"{self.package}  v{_package_version(self.package)}"
+        return "DEVELOPER RECIPE"
 
     @property
     def display_path(self) -> str:
-        return self.path if self.package is None else f"{self.package}/{self.path}"
+        return self.path
 
 
 def _package_version(package: str) -> str:
@@ -81,13 +78,7 @@ def stack_report() -> list[tuple[str, str]]:
 
 
 def _exhibit_root(exhibit: CodeExhibit) -> Path:
-    """Repo-relative for our code; the installed package directory for framework code."""
-    if exhibit.package is None:
-        return ROOT
-    spec = importlib.util.find_spec(exhibit.package)
-    if spec is None or not spec.submodule_search_locations:
-        raise ValueError(f"package not installed: {exhibit.package}")
-    return Path(spec.submodule_search_locations[0])
+    return ROOT
 
 
 def load_exhibit(exhibit: CodeExhibit) -> tuple[str, int, int]:
@@ -331,140 +322,69 @@ SCENES = (
     ),
 )
 
-FRAMEWORK = "agent_framework"
-FOUNDRY = "agent_framework_foundry"
-
 EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
     2: (
         CodeExhibit(
-            "Background agents: an agent delegating to other agents",
-            "_harness/_background_agents.py",
-            "source_id: str = DEFAULT_BACKGROUND",
+            "Add the organ: wake the agent from an external event",
+            "examples/organ_recipes.py",
+            "async def handle_business_event(",
             "python",
-            "Agents are supplied to a provider that a parent agent can dispatch work to.",
+            "An event handler turns a business event into an agent run without waiting for chat.",
             (
-                "Activation stops being a chat turn and becomes delegation between agents.",
-                "A Sequence of agents is the whole contract: composition, not orchestration glue.",
+                "Connect this handler to OneDrive, SharePoint, Event Grid, or Service Bus.",
+                "Keep the trigger adapter separate from the agent so event sources stay swappable.",
             ),
-            before=4,
+            "Use an event trigger or Power Automate flow to start the agent when a file, message, or business event arrives.",
+            before=0,
             after=3,
-            package=FRAMEWORK,
-        ),
-        CodeExhibit(
-            "Our trigger: the environment wakes the agent",
-            "anatomy/organs/o11_reflex_arc.py",
-            "def _latest_synced_file() -> Path | None:",
-            "python",
-            "The agent watches a synced folder and treats the newest artifact as its trigger.",
-            (
-                "There is no chat loop here. The input is the environment itself.",
-                "Point this at OneDrive, SharePoint, or Service Bus and the organ is unchanged.",
-            ),
-            before=1,
-            after=9,
         ),
     ),
     3: (
         CodeExhibit(
-            "THE ANATOMY IN ONE SIGNATURE: every organ is a named parameter",
-            "_agents.py",
-            'AGENT_PROVIDER_NAME: ClassVar[str] = "microsoft.agent_framework"',
+            "Add the organs: model plus instructions",
+            "examples/organ_recipes.py",
+            "def build_agent(client: Any) -> Agent:",
             "python",
-            "An agent is constructed from a client, instructions, tools, context providers, and middleware.",
+            "Pass a model client and explicit operating instructions to the public Agent constructor.",
             (
-                "Read the parameter names: this signature IS the anatomy we are dissecting.",
-                "Organs are injected at construction, not inherited or hard-coded.",
+                "The client supplies intelligence; instructions define the agent's job and boundaries.",
+                "Start here, then attach the remaining organs through public constructor parameters.",
             ),
+            "Choose the model in the agent's model settings, then write its role, rules, tone, and response boundaries in Instructions.",
             before=0,
-            after=17,
-            package=FRAMEWORK,
-        ),
-        CodeExhibit(
-            "Our attachment site: model plus instructions become an agent",
-            "anatomy/organs/o02_model.py",
-            "agent = Agent(",
-            "python",
-            "This project builds a real Agent from a Foundry chat client and a credential.",
-            (
-                "Two organs attach in six lines: the model, and the instructions that govern it.",
-                "No API key appears; the credential is the identity organ arriving early.",
-            ),
-            before=1,
             after=8,
-        ),
-        CodeExhibit(
-            "The Foundry client the agent is composed with",
-            "_chat_client.py",
-            "project_endpoint: str | None = None,",
-            "python",
-            "The chat client is a separate, swappable component the agent depends on.",
-            (
-                "The model is a dependency, not the agent. Swap the client, keep everything else.",
-                "Endpoint, deployment, and credential are constructor arguments, not globals.",
-            ),
-            before=4,
-            after=6,
-            package=FOUNDRY,
-            within="class FoundryChatClient(",
         ),
     ),
     4: (
         CodeExhibit(
-            "ContextProvider: the grounding hook that runs before the model",
-            "_sessions.py",
-            "async def before_run(",
+            "Add the organ: grounded knowledge",
+            "examples/organ_recipes.py",
+            "def add_knowledge(client: Any, policy_provider: Any) -> Agent:",
             "python",
-            "Providers inject messages, instructions, or tools into the pipeline before invocation.",
+            "Attach a context provider that retrieves approved policy evidence before the model answers.",
             (
-                "RAG is not special-cased in the framework. It is a lifecycle hook.",
-                "Everything the model will see is assembled through this one signature.",
+                "The provider owns retrieval; the instruction requires a visible citation.",
+                "Swap a local index for Azure AI Search without changing the agent contract.",
             ),
-            before=1,
-            after=7,
-            package=FRAMEWORK,
-            within="class ContextProvider:",
-        ),
-        CodeExhibit(
-            "Our grounding: the answer is bound to a source file",
-            "anatomy/organs/o03_knowledge.py",
-            'policy = Path(__file__).resolve().parents[2] / "data" / "refund-policy.txt"',
-            "python",
-            "The clause is retrieved from a document instead of recalled from weights.",
-            (
-                "Grounding is a lookup, then a citation a human can re-open.",
-                "Replace this file read with a vector index and the contract is identical.",
-            ),
-            before=2,
-            after=6,
+            "Add SharePoint, Dataverse, websites, or files on the Knowledge page and configure the agent to cite grounded sources.",
+            before=0,
+            after=5,
         ),
     ),
     5: (
         CodeExhibit(
-            "@tool: a Python function becomes a governed model capability",
-            "_tools.py",
-            ") -> FunctionTool | Callable[[Callable[..., Any]], FunctionTool]:",
+            "Add the organ: a governed business tool",
+            "examples/organ_recipes.py",
+            "def make_order_lookup(order_repository: Any) -> Any:",
             "python",
-            "The decorator derives a schema and carries approval and invocation limits.",
+            "Decorate a normal function, describe it clearly, and attach it to the agent's tools list.",
             (
-                "approval_mode and max_invocations mean tool governance is declarative.",
-                "The model never sees your function, only the generated schema.",
+                "The description tells the model when to call the tool.",
+                "Invocation limits constrain repeated calls; the function owns system access.",
             ),
-            before=12,
-            after=1,
-            package=FRAMEWORK,
-        ),
-        CodeExhibit(
-            "Our tool: language becomes a query against a system of record",
-            "anatomy/organs/o04_tools.py",
-            "def _order_lookup() -> str:",
-            "python",
-            "The agent opens the order database and reads the real row for 4471.",
-            (
-                "This is the boundary between talking about data and reading it.",
-                "The model never sees the database, only the tool's result.",
-            ),
-            before=1,
-            after=10,
+            "Add a Tool using a connector, agent flow, REST API, custom connector, or MCP server; its name and description guide selection.",
+            before=0,
+            after=14,
         ),
     ),
     6: (
@@ -478,288 +398,183 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
                 "The description is what the model reads when choosing a tool.",
                 "Adding capability here required no change to any Python file.",
             ),
+            "Tools are registered on the agent and generative orchestration selects among them from their names, descriptions, inputs, and outputs.",
             before=4,
             after=2,
         ),
     ),
     7: (
         CodeExhibit(
-            "FoundryMemoryProvider: managed memory attached as a context provider",
-            "_memory_provider.py",
-            "memory_store_name: str,",
+            "Add the organ: durable customer memory",
+            "examples/organ_recipes.py",
+            "def add_memory(client: Any, customer_memory: Any) -> Agent:",
             "python",
-            "Foundry-hosted memory plugs into the same provider interface as everything else.",
+            "Attach a customer-scoped memory provider that can recall relevant facts on later runs.",
             (
-                "Memory is not agent state. It is a provider you attach and can swap.",
-                "scope isolates memories per user or tenant; update_delay batches the writes.",
+                "Scope storage by authenticated customer or tenant before attaching it.",
+                "Keep durable memory separate from one conversation's message history.",
             ),
-            before=8,
-            after=6,
-            package=FOUNDRY,
-        ),
-        CodeExhibit(
-            "Our memory: state that outlives the conversation",
-            "anatomy/organs/o06_memory.py",
-            'MEMORY_PATH.write_text(json.dumps(store, indent=2), encoding="utf-8")',
-            "python",
-            "Facts are written to durable storage keyed independently of the thread.",
-            (
-                "Continuity is a storage decision, not a model capability.",
-                "The thread identifier changes; the stored key does not.",
-            ),
-            before=4,
-            after=2,
+            "Use conversation variables for session state and Dataverse or an action for durable, user-scoped facts across conversations.",
+            before=0,
+            after=5,
         ),
     ),
     8: (
         CodeExhibit(
-            "AgentMiddleware: intercept the invocation and terminate it",
-            "_middleware.py",
-            "async def process(",
+            "Add the organ: guardrail middleware",
+            "examples/organ_recipes.py",
+            "def add_guardrails(client: Any, safety_middleware: Any) -> Agent:",
             "python",
-            "Middleware wraps every invocation and can override the result or stop execution.",
+            "Attach safety middleware outside the prompt so it can block a run before a tool or model proceeds.",
             (
-                "call_next is the pipeline: not calling it terminates the invocation.",
-                "Guardrails live outside the prompt, so instructions cannot talk past them.",
+                "Use instructions for policy and middleware for enforceable checks.",
+                "Return a reason with every block so operations teams can audit it.",
             ),
-            before=1,
+            "Combine agent instructions and moderation with authentication, connector permissions, environment security, and Power Platform DLP policies.",
+            before=0,
             after=5,
-            package=FRAMEWORK,
-            within="class AgentMiddleware(ABC):",
-        ),
-        CodeExhibit(
-            "Our guardrails: refusal carries a stated reason",
-            "anatomy/organs/o07_guardrails.py",
-            "BLOCKED by content guardrail",
-            "python",
-            "Each request is evaluated and annotated with the control that acted.",
-            (
-                "A block without a reason is unauditable. The reason is the feature.",
-                "One request passes; two are refused with cause.",
-            ),
-            before=3,
-            after=2,
         ),
     ),
     9: (
         CodeExhibit(
-            "WorkflowBuilder: multi-agent choreography as a typed graph",
-            "_workflows/_workflow_builder.py",
-            "def add_edge(",
+            "Add the organ: a reviewed multi-agent workflow",
+            "examples/organ_recipes.py",
+            "async def run_reviewed_workflow(",
             "python",
-            "Executors are connected with typed edges and compiled into an immutable workflow.",
+            "Give research, drafting, and review to named agents with explicit handoffs.",
             (
-                "Orchestration becomes a declarative graph, not nested prompt calls.",
-                "A conditional edge is routing logic you can read without running it.",
+                "Each boundary can be traced, tested, retried, or replaced independently.",
+                "Add conditional routing when the reviewer needs to reject a draft.",
             ),
-            before=1,
-            after=5,
-            package=FRAMEWORK,
-        ),
-        CodeExhibit(
-            "Our workflow: one request becomes named, ordered steps",
-            "anatomy/organs/o08_orchestration.py",
-            "output = [",
-            "python",
-            "Research, drafting, and review are separate auditable nodes.",
-            (
-                "Each step can be inspected, retried, or replaced on its own.",
-                "A single opaque prompt offers none of those three options.",
-            ),
-            before=1,
-            after=8,
+            "Use topics and agent flows for explicit steps, or connected agents when specialist agents should delegate work to one another.",
+            before=0,
+            after=7,
         ),
     ),
     10: (
         CodeExhibit(
-            "Our identity: Entra credential, no key in the repository",
-            "anatomy/organs/o02_model.py",
-            "credential = AzureCliCredential()",
+            "Add the organ: keyless Entra identity",
+            "examples/organ_recipes.py",
+            "async def run_with_identity(endpoint: str, model: str, prompt: str) -> str:",
             "python",
-            "The agent authenticates as a signed-in principal instead of a shared secret.",
+            "Use DefaultAzureCredential so development and managed identity share one code path with explicit cleanup.",
             (
-                "In production this becomes managed identity with the same code shape.",
-                "The credential is closed in a finally block: tokens are lifecycle-managed.",
+                "Assign the deployed identity only the roles its tools require.",
+                "Dispose the credential with the application lifecycle.",
             ),
-            before=2,
-            after=4,
-        ),
-        CodeExhibit(
-            "Our least-privilege proof: the actor is a claim",
-            "anatomy/organs/o09_identity.py",
-            "Decoded token claims: oid=",
-            "python",
-            "Every action is attributed to a principal and checked against least privilege.",
-            (
-                "The 403 is the demonstration. Refusal proves the boundary exists.",
-                "SIMULATED here; in your cloud this is Azure RBAC.",
-            ),
-            before=2,
-            after=3,
+            "Configure agent authentication with Microsoft Entra ID, then use connection references and each connector's identity settings for least privilege.",
+            before=0,
+            after=8,
         ),
     ),
     11: (
         CodeExhibit(
-            "ChatTelemetryLayer: OpenTelemetry wrapped around the model call",
-            "observability.py",
-            "class ChatTelemetryLayer(Generic[OptionsCoT]):",
+            "Add the organ: telemetry middleware",
+            "examples/organ_recipes.py",
+            "def add_observability(client: Any, telemetry_middleware: Any) -> Agent:",
             "python",
-            "Token-usage and duration histograms are attached to any chat client by composition.",
+            "Attach OpenTelemetry middleware once so every model and tool operation emits correlated evidence.",
             (
-                "Spans and token histograms are built in, not bolted on afterwards.",
-                "Layering means observability costs you no changes at the call site.",
+                "Give the agent a stable service name for filtering and dashboards.",
+                "Export traces to Application Insights or any OpenTelemetry backend.",
             ),
+            "Use the Analytics page for adoption and quality trends; connect Application Insights for detailed conversation and event telemetry.",
             before=0,
-            after=9,
-            package=FRAMEWORK,
-        ),
-        CodeExhibit(
-            "Our trace: the reasoning path as spans",
-            "anatomy/organs/o10_observability.py",
-            "Span tree (local console exporter):",
-            "python",
-            "Latency, tokens, and tool calls are recorded per operation.",
-            (
-                "Without spans, a failure leaves only a final answer and no path.",
-                "Exportable to Application Insights with one connection string.",
-            ),
-            before=1,
-            after=6,
+            after=5,
         ),
     ),
     12: (
         CodeExhibit(
-            "UsageDetails: token accounting the cost model reads",
-            "_types.py",
-            "cache_read_input_token_count: int | None",
+            "Add the organ: a hard run budget",
+            "examples/organ_recipes.py",
+            "def add_budget(client: Any, budget_middleware: Any) -> Agent:",
             "python",
-            "Standard and provider-specific token counters, including cache and reasoning tokens.",
+            "Attach middleware that checks token, cost, time, or step limits before allowing more work.",
             (
-                "You cannot cap what you cannot count. These fields are the metering primitive.",
-                "Cache-read and reasoning tokens price very differently: the detail matters.",
+                "Meter before each operation and reject the operation that would cross the cap.",
+                "Record the rejection so an operator can distinguish budget stops from failures.",
             ),
-            before=4,
-            after=2,
-            package=FRAMEWORK,
-        ),
-        CodeExhibit(
-            "Our budget: the cap is enforced, not advised",
-            "anatomy/organs/o14_metabolism.py",
-            "meter.add(input_tokens=charge // 2",
-            "python",
-            "Each charge is admitted only if it fits inside the cap.",
-            (
-                "The cap raises an exception. A warning would still let the spend land.",
-                "Autonomy without a spending boundary is an unbounded loop.",
-            ),
-            before=4,
-            after=4,
+            "Review capacity and usage in analytics and the Power Platform admin center; enforce per-run hard limits inside the called flow or action.",
+            before=0,
+            after=5,
         ),
     ),
     13: (
         CodeExhibit(
-            "WorkflowCheckpoint: exactly what survives the crash",
-            "_workflows/_checkpoint.py",
-            "previous_checkpoint_id: CheckpointID | None = None",
+            "Add the organ: persist a checkpoint",
+            "examples/organ_recipes.py",
+            "def save_checkpoint(path: Path, completed_steps: set[str]) -> None:",
             "python",
-            "The checkpoint record carries messages, state, pending events, and lineage.",
+            "Persist completed step identifiers immediately after each consequential action succeeds.",
             (
-                "Durability is a data model, not a retry policy.",
-                "previous_checkpoint_id forms the lineage chain that orders a recovery.",
+                "Write the checkpoint before the next step begins.",
+                "Store operation IDs with side effects so retries remain idempotent.",
             ),
-            before=4,
-            after=9,
-            package=FRAMEWORK,
-        ),
-        CodeExhibit(
-            "Our spine: the checkpoint is written before the crash",
-            "anatomy/organs/o13_spine.py",
-            "_save_checkpoint(steps)",
-            "python",
-            "Completed work is persisted at each step boundary.",
-            (
-                "Durability is decided before the failure, never after it.",
-                "The file on disk is the only thing that survives the process.",
-            ),
-            before=6,
+            "Use a cloud or agent flow for durable execution and persist business checkpoints and idempotency keys in Dataverse for consequential actions.",
+            before=0,
             after=2,
         ),
     ),
     14: (
         CodeExhibit(
-            "Our resume: completed work does not run twice",
-            "anatomy/organs/o13_spine.py",
-            "if step.done:",
+            "Add the organ: resume only unfinished work",
+            "examples/organ_recipes.py",
+            "def unfinished_steps(path: Path, all_steps: list[str]) -> list[str]:",
             "python",
-            "Restart reads the checkpoint and re-executes only unfinished steps.",
+            "Load the checkpoint after restart and schedule only steps that have no completion record.",
             (
-                "This is why a refund is not issued twice after a restart.",
-                "Determinism comes from recorded state, not from retry luck.",
+                "A retry must not repeat a refund, email, or other side effect.",
+                "Recorded completion state makes recovery deterministic.",
             ),
-            before=2,
-            after=4,
+            "Cloud flow retry policies and run history handle transient failures; use Dataverse state and idempotent actions when a run must resume safely.",
+            before=0,
+            after=3,
         ),
     ),
     15: (
         CodeExhibit(
-            "InlineSkill: expertise with declared resources and scripts",
-            "_skills.py",
-            "frontmatter: SkillFrontmatter,",
+            "Add the organ: modular skill selection",
+            "examples/organ_recipes.py",
+            "def add_skill(client: Any, triage_skill: Any) -> Agent:",
             "python",
-            "A skill carries frontmatter metadata, instructions, resources, and executable scripts.",
+            "Package specialist behavior behind a well-described tool and attach it only where needed.",
             (
-                "Skills are discoverable units, so the model loads detail only when it selects one.",
-                "Resources and scripts ship with the skill: expertise is packaged, not pasted.",
+                "The skill description is the routing contract.",
+                "Loading expertise on demand keeps the base instructions small.",
             ),
-            before=3,
+            "Model reusable expertise as a topic, prompt tool, agent flow, or connected specialist agent, with a precise description for routing.",
+            before=0,
             after=5,
-            package=FRAMEWORK,
-            within="class InlineSkill(Skill):",
         ),
         CodeExhibit(
-            "FoundryEvals: the measurement loop that closes learning",
-            "_foundry_evals.py",
-            "def __init__(",
+            "Add the organ: promote only measured improvements",
+            "examples/organ_recipes.py",
+            "def promote_instruction(candidate: str, evaluator: Any) -> str:",
             "python",
-            "Evaluation runs against a Foundry project and returns scored results.",
+            "Score a candidate instruction against the current version and keep it only when it performs better.",
             (
-                "Improvement becomes a measured delta instead of a prompt-tweaking anecdote.",
-                "This is the organ that turns yesterday's failures into tomorrow's instructions.",
+                "Use a stable evaluation set so scores remain comparable.",
+                "Require human review before publishing instruction changes.",
             ),
-            before=1,
-            after=8,
-            package=FOUNDRY,
-            within="class FoundryEvals:",
-        ),
-        CodeExhibit(
-            "Our learning: the failure rewrites the instruction",
-            "anatomy/organs/o16_learning.py",
-            'new_instruction = "Decide refunds only after policy citation and order lookup."',
-            "python",
-            "Measured failures produce a concrete instruction change.",
-            (
-                "The improvement is a diff you can review, not a vague retrain.",
-                "Evidence in, instruction out, score measured again.",
-            ),
-            before=2,
-            after=2,
+            "Use test sets, agent evaluations, analytics, and conversation transcripts to compare changes before editing instructions and republishing.",
+            before=0,
+            after=3,
         ),
     ),
     17: (
         CodeExhibit(
-            "Evaluator: any backend can score an agent",
-            "_evaluation.py",
-            "eval_name: str,",
+            "Compose the anatomy through public attachment points",
+            "examples/organ_recipes.py",
+            "def compose_agent(",
             "python",
-            "Foundry, a local LLM judge, or a custom scorer all satisfy one protocol.",
+            "Compose tools, context providers, and middleware around one model client and instruction set.",
             (
-                "Every organ we dissected is a protocol or a parameter. That is the design.",
-                "Composition over inheritance is what makes this anatomy swappable.",
+                "Each list is an extension point, so capabilities remain independently replaceable.",
+                "Add only the organs required by the business failure you need to control.",
             ),
-            before=6,
-            after=1,
-            package=FRAMEWORK,
-            within="class Evaluator(Protocol):",
+            "The agent canvas composes the same anatomy through Instructions, Knowledge, Tools, Topics, connected agents, authentication, and analytics.",
+            before=0,
+            after=11,
         ),
     ),
 }
@@ -1116,6 +931,8 @@ class AnatomyShow(App[None]):
         log.write(Text(f"\nWHAT IT DOES   {exhibit.mechanism}", style="#EAF4F4"))
         for note in exhibit.read_this:
             log.write(Text(f"WHY IT MATTERS {note}", style="#7EE787"))
+        if exhibit.copilot_studio:
+            log.write(Text(f"COPILOT STUDIO {exhibit.copilot_studio}", style="#50E6FF"))
         log.write(Text("\nPress C for the next exhibit, or Space to run the evidence.", style="dim"))
 
     def action_previous(self) -> None:
