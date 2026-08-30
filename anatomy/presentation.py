@@ -128,6 +128,22 @@ FRAMES = {
         "Observe the instruction diff and the before-versus-after success rate.",
         "Learning loops shifted progress from anecdotal prompt tweaking to measured system improvement.",
     ),
+    "planning": TeachingFrame(
+        "Goals become executable plans",
+        "TASK DECOMPOSITION",
+        "A reactive agent treats a complex escalation as one opaque action.",
+        "Decomposed sub-goals expose dependencies, checkpoints, and independent failure paths.",
+        "Follow Verify, CheckPolicy, Decide, and Compose in the dependency plan.",
+        "Planning made autonomous work measurable and auditable before execution begins.",
+    ),
+    "beliefs": TeachingFrame(
+        "World state becomes explicit",
+        "STATE REPRESENTATION",
+        "The agent cannot explain which changing facts shaped its next decision.",
+        "A queryable belief store records evidence, updates, and their downstream effects.",
+        "Compare the before-and-after customer tier, approval rate, and decision threshold.",
+        "Beliefs made learning persistent, interpretable, and available to future decisions.",
+    ),
     "reflex arc": TeachingFrame(
         "Agents become event-driven",
         "AUTONOMOUS ROUTINES",

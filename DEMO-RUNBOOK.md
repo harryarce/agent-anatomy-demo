@@ -85,7 +85,7 @@ Run these before every rehearsal or presentation:
 
 ```powershell
 python -m pip check
-python -m unittest tests.test_organs tests.test_show -v
+python -m unittest discover -s tests -v
 python -m compileall -q anatomy scripts tests
 python -m anatomy preflight
 python -m anatomy list
@@ -98,7 +98,7 @@ Success criteria:
 - `compileall` exits without output.
 - Required preflight rows show `PASS`.
 - An App Insights `WARN` is acceptable when cloud export is not configured.
-- The organ list shows all 14 in-scope organs as `ready`.
+- The organ list shows all 16 organs as `ready`.
 
 ## 5. Fastest Safe Stage Run
 
@@ -133,7 +133,7 @@ Resume at the Spine climax during rehearsal or recovery:
 python -m anatomy show --from 13
 ```
 
-Scene 14 prepares the deterministic kill automatically if its checkpoint is absent. Live command failures fall back to the scene's committed evidence; the intentional Spine exit code `1` is treated as expected proof.
+Scene 13 prepares the deterministic kill automatically if its checkpoint is absent. Live command failures fall back to the scene's committed evidence; the intentional Spine exit code `1` is treated as expected proof.
 
 Universal scrolling fallback:
 
@@ -149,7 +149,7 @@ Presenter mode uses projection-width panels and adds five teaching cues to every
 4. **Watch for** tells the room which visible proof matters.
 5. **The difference** and **Say this** close with a before/after contrast and a memorable speaker line.
 
-It performs no model inference and ends with the Reflex Arc callback: `Nobody typed anything, and Ada still woke up and acted.`
+It performs no model inference and ends with Beliefs showing how verified state changes the next decision.
 
 To resume at a later beat:
 
@@ -370,6 +370,46 @@ python -m anatomy demo learning
 ### Beat 12: Reflex Arc
 
 Use the file-trigger sequence in Section 6. To demonstrate a different event, add a UTF-8 PDF or CSV to `onedrive/`; the latest file by modification time is processed. `result.txt` is excluded from trigger selection. The folder is a local stand-in for a OneDrive or SharePoint document library; in production the same organ is driven by a file-created event through Logic Apps or Power Automate.
+
+### Beat 13: Planning
+
+Goal decomposition and multi-step reasoning:
+
+```powershell
+python -m anatomy beat 13
+```
+
+Expected evidence:
+
+- The escalation goal is decomposed into four sub-goals with dependencies.
+- Each sub-goal has an explicit readiness state and dependency.
+- The plan shows the intended path: Verify → CheckPolicy → Decide → Compose.
+- This demonstrates visible decision boundaries separate from single-shot execution.
+
+**Microsoft Stack integration:** Use Agent Framework structured prompts to plan before acting. In Copilot Studio, map sub-goals to Power Automate parallel branches where independent. Trace each sub-goal with OpenTelemetry spans.
+
+### Beat 14: Beliefs
+
+World state representation and decision cascading:
+
+```powershell
+python -m anatomy beat 14
+```
+
+Expected evidence:
+
+- Initial belief store shows customer tiers, policy thresholds, and learned patterns.
+- New evidence from recent interaction is shown.
+- Beliefs are updated: `approval_rate: 0.72 → 0.75`, `tier: standard → standard-trusted`.
+- Future decision thresholds change as a result: `days_late >= 5 becomes >= 4` for auto-approval.
+
+**Microsoft Stack integration:** Use Foundry Memory service or Azure Table Storage for durable fact store. Use context_providers to load beliefs before reasoning. Use tools to persist belief updates with audit logging in Application Insights.
+
+Optional: View persisted beliefs file:
+
+```powershell
+Get-Content .anatomy-beliefs.json
+```
 
 ## 8. Autopsy: Remove One Organ
 

@@ -8,7 +8,7 @@ DANGER = "#FF4D6D"
 ORGANS = (
     "Instructions", "Model", "Knowledge", "Tools", "Skills", "Memory",
     "Guardrails", "Orchestration", "Identity", "Observability", "Reflex Arc",
-    "Opposable Th.", "Spine", "Metabolism", "Face", "Learning",
+    "Planning", "Spine", "Metabolism", "Beliefs", "Learning",
 )
 
 

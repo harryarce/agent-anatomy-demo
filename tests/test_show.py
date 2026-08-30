@@ -5,7 +5,7 @@ import tokenize
 import unittest
 from importlib import metadata
 
-from textual.widgets import RichLog
+from textual.widgets import RichLog, Static
 
 from anatomy import runner
 from anatomy.show import ANATOMY, EXHIBITS, ROOT, SCENES, AnatomyShow, load_exhibit, stack_report
@@ -29,18 +29,22 @@ def _code_density(snippet: str) -> float:
 
 class ShowRouteTests(unittest.TestCase):
     def test_route_is_complete_and_numbered(self) -> None:
-        self.assertEqual([scene.number for scene in SCENES], list(range(1, 19)))
+        self.assertEqual([scene.number for scene in SCENES], list(range(1, len(SCENES) + 1)))
+        self.assertEqual(len(SCENES), 19)
 
         implemented = {number for number, _, available in ANATOMY if available}
-        demonstrated = {number for scene in SCENES for number in scene.organs if number not in (12, 15)}
+        self.assertEqual(implemented, set(range(1, 17)))
+        demonstrated = {number for scene in SCENES for number in scene.organs}
         self.assertEqual(demonstrated, implemented)
 
-    def test_planned_organs_are_honest_presenter_moments(self) -> None:
-        gap_scene = SCENES[15]
+    def test_planning_and_beliefs_are_executable_scenes(self) -> None:
+        planning = next(scene for scene in SCENES if scene.organs == (12,))
+        beliefs = next(scene for scene in SCENES if scene.organs == (15,))
 
-        self.assertEqual(gap_scene.organs, (12, 15))
-        self.assertFalse(gap_scene.safe_steps)
-        self.assertFalse(gap_scene.live_steps)
+        self.assertTrue(planning.safe_steps)
+        self.assertTrue(beliefs.safe_steps)
+        self.assertIn("13", planning.safe_steps[0].args)
+        self.assertIn("14", beliefs.safe_steps[0].args)
 
     def test_every_demo_step_uses_the_real_cli_contract(self) -> None:
         parser = runner.build_parser()
@@ -50,8 +54,8 @@ class ShowRouteTests(unittest.TestCase):
                 self.assertIn(parsed.command, {"beat", "spine", "tools"})
 
     def test_spine_kill_expects_the_demonstrated_failure(self) -> None:
-        kill_step = SCENES[12].safe_steps[0]
-        resume_step = SCENES[13].safe_steps[0]
+        kill_step = next(scene for scene in SCENES if scene.number == 12).safe_steps[0]
+        resume_step = next(scene for scene in SCENES if scene.number == 13).safe_steps[0]
 
         self.assertEqual(kill_step.expected_exit_codes, (1,))
         self.assertIn(".anatomy-spine-checkpoint.json", kill_step.cleanup)
@@ -59,9 +63,9 @@ class ShowRouteTests(unittest.TestCase):
         self.assertIs(resume_step.prepare_if_missing, kill_step)
 
     def test_show_command_selects_scene_and_live_mode(self) -> None:
-        args = runner.build_parser().parse_args(["show", "--from", "13", "--live"])
+        args = runner.build_parser().parse_args(["show", "--from", "19", "--live"])
 
-        self.assertEqual(args.from_scene, 13)
+        self.assertEqual(args.from_scene, 19)
         self.assertTrue(args.live)
 
 
@@ -84,7 +88,7 @@ class CodeExhibitTests(unittest.TestCase):
                     self.assertNotIn("site-packages", exhibit.display_path)
 
     def test_whole_anatomy_recipe_names_every_attachment_point(self) -> None:
-        signature, _, _ = load_exhibit(EXHIBITS[17][0])
+        signature, _, _ = load_exhibit(EXHIBITS[18][0])
 
         for parameter in ("instructions=", "tools=", "context_providers=", "middleware="):
             self.assertIn(parameter, signature)
@@ -178,7 +182,7 @@ class ShowInteractionTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(app.scene_index, len(SCENES) - 1)
 
     async def test_speaker_can_show_and_hide_code_exhibits(self) -> None:
-        app = AnatomyShow(start_scene=3)
+        app = AnatomyShow(start_scene=2)
 
         async with app.run_test(size=(120, 40)) as pilot:
             self.assertIsNone(app.exhibit_index)
@@ -211,13 +215,33 @@ class ShowInteractionTests(unittest.IsolatedAsyncioTestCase):
         async with app.run_test(size=(120, 40)) as pilot:
             opening = self.rendered_log(app)
             self.assertIn("a n a t o m y", opening)
-            self.assertIn("Fourteen organs run here", opening)
+            self.assertIn("Sixteen organs run here", opening)
 
             await pilot.press("right")
             self.assertNotIn("a n a t o m y", self.rendered_log(app))
 
-    async def test_stage_safe_cold_open_runs_inside_show(self) -> None:
-        app = AnatomyShow(start_scene=2)
+    async def test_complete_anatomy_rail_names_all_registered_organs(self) -> None:
+        app = AnatomyShow(start_scene=18)
+
+        async with app.run_test(size=(120, 40)):
+            rail = app.query_one("#anatomy", Static).render().plain
+            for organ in runner.ORGANS:
+                self.assertIn(organ.name.title(), rail)
+            self.assertIn("16 / 16 RUNNABLE ONLINE", rail)
+
+    async def test_planning_and_beliefs_run_inside_show(self) -> None:
+        app = AnatomyShow(start_scene=16)
+
+        async with app.run_test(size=(120, 40)):
+            await app.action_run_demo()
+            self.assertIn("Plan validation (before execution)", self.rendered_log(app))
+            app.scene_index = 16
+            app._render_scene()
+            await app.action_run_demo()
+            self.assertIn("Contoso_auto_approve_days_late", self.rendered_log(app))
+
+    async def test_stage_safe_reflex_arc_runs_inside_show(self) -> None:
+        app = AnatomyShow(start_scene=15)
 
         async with app.run_test(size=(120, 40)):
             await app.action_run_demo()
@@ -229,7 +253,7 @@ class ShowInteractionTests(unittest.IsolatedAsyncioTestCase):
     async def test_direct_spine_resume_stages_missing_checkpoint(self) -> None:
         checkpoint = ROOT / ".anatomy-spine-checkpoint.json"
         checkpoint.unlink(missing_ok=True)
-        app = AnatomyShow(start_scene=14)
+        app = AnatomyShow(start_scene=13)
 
         try:
             async with app.run_test(size=(120, 40)):

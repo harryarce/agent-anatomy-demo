@@ -1,0 +1,67 @@
+{
+  "organ": "beliefs",
+  "status": "ok",
+  "firing": [
+    "Instructions",
+    "Model",
+    "Knowledge",
+    "Tools",
+    "Memory",
+    "Beliefs",
+    "Observability"
+  ],
+  "output": [
+    "World state (beliefs) before learning:",
+    "{",
+    "  \"customer_tiers\": {",
+    "    \"Contoso\": \"standard\",",
+    "    \"Tailspin Toys\": \"premium\",",
+    "    \"Fabrikam\": \"standard\"",
+    "  },",
+    "  \"policy_thresholds\": {",
+    "    \"standard_tier_days_late_refund_threshold\": 5,",
+    "    \"premium_tier_days_late_refund_threshold\": 7,",
+    "    \"executive_escalation_threshold\": 30",
+    "  },",
+    "  \"customer_decision_thresholds\": {",
+    "    \"Contoso_auto_approve_days_late\": 5",
+    "  },",
+    "  \"learned_patterns\": {",
+    "    \"Contoso_refund_approval_rate\": 0.72,",
+    "    \"recent_policy_disputes\": 3",
+    "  }",
+    "}",
+    "",
+    "New evidence from recent interaction:",
+    "- Contoso escalation 4471 resolved with policy citation",
+    "- Customer accepted decision without legal challenge",
+    "- 48-hour follow-up: customer satisfaction score = 8/10",
+    "",
+    "Belief update:",
+    "  learned_patterns.Contoso_refund_approval_rate: 0.72 -> 0.75",
+    "  learned_patterns.recent_policy_disputes: 3 -> 2",
+    "  customer_tiers.Contoso: 'standard' -> 'standard-trusted'",
+    "  customer_decision_thresholds.Contoso_auto_approve_days_late: 5 -> 4",
+    "",
+    "Downstream impact on NEXT escalation:",
+    "  IF customer = Contoso AND days_late >= 4 (was >= 5):",
+    "      THEN auto-approve (was: require-review)",
+    "      CONFIDENCE increased from 0.68 -> 0.78"
+  ],
+  "payoff": [
+    "World state is explicit, versioned, and queryable—not hidden in weights or prompt history.",
+    "Belief updates show exactly which facts changed and why (audit trail).",
+    "Future decisions are shaped by accumulated evidence, not repeated guesswork."
+  ],
+  "landing_line": "Belief updates cascaded through the decision engine, improving future accuracy.",
+  "usage": {
+    "input_tokens": 156,
+    "output_tokens": 118,
+    "estimated_cost_usd": 0.0,
+    "latency_seconds": 0.18
+  },
+  "labels": [
+    "LOCAL IMPLEMENTATION"
+  ],
+  "source": "local belief state engine"
+}

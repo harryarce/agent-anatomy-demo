@@ -28,7 +28,7 @@ Warnings for an unconfigured Foundry endpoint, model, or Application Insights co
 
 The show never hardcodes a version number. Every version is read from installed package metadata at runtime:
 
-- Scene 18 opens on a stack panel listing Python and every major dependency with its live version.
+- Scene 19 opens on a stack panel listing Python and every major dependency with its live version.
 
 A test asserts that each `==` pin in `requirements.txt` matches the installed version, so the stack panel can never drift from what is actually installed.
 
@@ -68,7 +68,7 @@ Start from a specific scene:
 python -m anatomy show --from 13
 ```
 
-Valid scene numbers are 1 through 18. Scene 13 starts the Spine kill/resume climax.
+Valid scene numbers are 1 through 19. Scene 12 starts the Spine kill/resume sequence.
 
 If activating the virtual environment is blocked, launch it directly:
 
@@ -84,7 +84,8 @@ If activating the virtual environment is blocked, launch it directly:
 | `Space` | Run the current scene's evidence |
 | `C` | Show the next code exhibit, or hide it |
 | `R` | Switch between stage-safe and live/local mode |
-| `Home` / `End` | Jump to scene 1 or scene 18 |
+| `Home` / `End` | Jump to scene 1 or scene 19 |
+| `Page Up` / `Page Down` | Scroll long evidence or code exhibits |
 | `Esc` | Cancel the active command without starting a fallback |
 | `Q` | Exit the show |
 
@@ -102,7 +103,7 @@ Each exhibit shows the file path, a short recipe with line numbers and the decis
 - `WHY IT MATTERS` connects the mechanism to dependable agent behavior.
 - `COPILOT STUDIO` names the corresponding low-code component or configuration surface.
 
-The headline exhibit is scene 17: `compose_agent`. Its `instructions`, `tools`, `context_providers`, and `middleware` arguments are the anatomy being assembled through public APIs. Open it and read the attachment points aloud.
+The headline exhibit is scene 18: `compose_agent`. Its `instructions`, `tools`, `context_providers`, and `middleware` arguments are the anatomy being assembled through public APIs. Open it and read the attachment points aloud.
 
 All exhibits are anchored to a line that must appear exactly once in its file, and a test asserts this, so a snippet can never drift from the code that actually ran.
 
@@ -110,27 +111,29 @@ For a nontechnical room, skip `C` entirely. For engineers, open the exhibit afte
 
 ## Recommended 45-Minute Route
 
-Navigate through all 18 scenes, but press `Space` only on the strongest evidence scenes below. This keeps the talk near 37 minutes and leaves approximately 8 minutes for questions.
+Navigate through all 19 scenes, but press `Space` only where the table says to run evidence. This route targets 41 minutes and preserves approximately 4 minutes for transitions or questions.
 
 | Scene | Moment | Run evidence? | Target |
 |---|---|---:|---:|
 | 1 | Introduction | No | 2 min |
-| 2 | Reflex Arc cold open | Yes | 3 min |
-| 3 | Brain alone: Instructions + Model | Yes | 4 min |
-| 4 | Knowledge | Yes | 3 min |
-| 5 | Tools | Yes | 3 min |
-| 6-7 | Tool discovery + Memory | No; explain from the scene | 3 min |
-| 8 | Guardrails | Yes | 3 min |
-| 9-10 | Orchestration + Identity | No; explain from the scene | 3 min |
-| 11 | Observability | Yes | 3 min |
-| 12 | Metabolism | No; explain from the scene | 2 min |
-| 13-14 | Spine kill + resume | Yes on both | 6 min |
-| 15 | Skills + Learning | Yes | 3 min |
-| 16-18 | Honest gaps, complete anatomy, resources | No | 2 min |
+| 2 | Brain alone: Instructions + Model | Yes | 4 min |
+| 3 | Knowledge | Yes | 3 min |
+| 4 | Tools | Yes | 3 min |
+| 5-6 | Tool discovery + Memory | No; explain from the scene | 3 min |
+| 7 | Guardrails | Yes | 3 min |
+| 8-9 | Orchestration + Identity | No; explain from the scene | 3 min |
+| 10 | Observability | Yes | 3 min |
+| 11 | Metabolism | No; explain from the scene | 2 min |
+| 12-13 | Spine kill + resume | Yes on both | 6 min |
+| 14 | Skills + Learning | No; explain from the scene | 3 min |
+| 15 | Reflex Arc | Yes | 3 min |
+| 16 | Planning | Yes | 2 min |
+| 17 | Beliefs | Yes | 2 min |
+| 18-19 | Complete anatomy + resources | No | 2 min |
 
 Do not attempt to read every output line. Point to the proof named under `WATCH FOR`, pause on the result, and close each scene by delivering the takeaway line shown at the bottom of the screen.
 
-Adding one code exhibit per demonstrated organ costs roughly 30 seconds each. If you open exhibits on all seven evidence scenes, drop the optional explanations in scenes 6-7 and 9-10 to stay inside 45 minutes.
+Adding one code exhibit per demonstrated organ costs roughly 30 seconds each. For a 45-minute slot, open exhibits only on scenes 2, 4, 16, and 17; use scene 18 to show all attachment points together.
 
 ## Live Foundry Mode
 
@@ -153,7 +156,7 @@ Only the Model organ requires Foundry inference. Local demonstrations such as SQ
 | A live scene fails | Let its automatic stage-safe fallback finish |
 | A command appears stuck | Press `Esc`, then press `R` and rerun with `Space` |
 | The show exits | Relaunch with `python -m anatomy show --from <scene>` |
-| Spine checkpoint is missing at scene 14 | Press `Space`; the show stages the expected kill before resuming |
+| Spine checkpoint is missing at scene 13 | Press `Space`; the show stages the expected kill before resuming |
 | Terminal rendering is poor | Maximize the terminal and reduce its font size slightly |
 | Fullscreen UI cannot run | Use `python -m anatomy present --replay --reset` |
 
@@ -163,10 +166,11 @@ The Spine kill intentionally returns exit code 1. In the show, this is displayed
 
 1. Maximize the terminal and confirm all 16 organ labels fit in the left rail.
 2. Launch `python -m anatomy show` and practice the 45-minute route above.
-3. Press `C` on scene 3 and confirm the developer recipe and `COPILOT STUDIO` explanation render without wrapping badly.
-4. Confirm scene 2 reaches `EVIDENCE COMPLETE`.
-5. Confirm scenes 13 and 14 display the expected kill followed by `SKIP` for completed steps.
-6. Confirm scene 18 displays the live stack panel and the three public resource shortcuts.
-7. Keep the scrolling fallback command in terminal history.
+3. Press `C` on scene 2 and confirm the developer recipe and `COPILOT STUDIO` explanation render without wrapping badly.
+4. Confirm scene 15 reaches `EVIDENCE COMPLETE` without relying on filesystem timing in stage-safe mode.
+5. Confirm scenes 12 and 13 display the expected kill followed by `SKIP` for completed steps.
+6. Confirm scenes 16 and 17 run Planning and Beliefs evidence and expose their code exhibits.
+7. Confirm scene 19 displays the live stack panel and the three public resource shortcuts.
+8. Keep the scrolling fallback command in terminal history.
 
 For individual organ commands and expected output, see [DEMO-RUNBOOK.md](DEMO-RUNBOOK.md). For concise speaking cues, see [DEMO-SCRIPT.md](DEMO-SCRIPT.md).

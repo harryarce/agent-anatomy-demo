@@ -12,30 +12,28 @@ from pathlib import Path
 from rich.console import Console
 
 from anatomy import runner
+from anatomy.banner import ORGANS as BANNER_ORGANS
 from anatomy.presentation import FRAMES, difference_panel, teaching_intro
+from scripts.preflight import ORGAN_MODULES as PREFLIGHT_MODULES
+from scripts.preflight import REQUIRED_REPLAYS
 
 
-ORGAN_MODULES = (
-    "anatomy.organs.o01_instructions",
-    "anatomy.organs.o02_model",
-    "anatomy.organs.o03_knowledge",
-    "anatomy.organs.o04_tools",
-    "anatomy.organs.o05_skills",
-    "anatomy.organs.o06_memory",
-    "anatomy.organs.o07_guardrails",
-    "anatomy.organs.o08_orchestration",
-    "anatomy.organs.o09_identity",
-    "anatomy.organs.o10_observability",
-    "anatomy.organs.o11_reflex_arc",
-    "anatomy.organs.o13_spine",
-    "anatomy.organs.o14_metabolism",
-    "anatomy.organs.o16_learning",
-)
+ORGAN_MODULES = tuple(organ.module for organ in runner.ORGANS)
 
 
 class OrganMetadataTests(unittest.TestCase):
     def test_every_organ_has_a_teaching_frame(self) -> None:
         self.assertEqual(set(FRAMES), {organ.name for organ in runner.ORGANS})
+
+    def test_compact_banner_matches_registered_organs(self) -> None:
+        self.assertEqual(BANNER_ORGANS, tuple(organ.name.title() for organ in runner.ORGANS))
+
+    def test_preflight_covers_every_registered_organ(self) -> None:
+        self.assertEqual(set(PREFLIGHT_MODULES), {organ.module for organ in runner.ORGANS})
+        self.assertEqual(
+            set(REQUIRED_REPLAYS),
+            {organ.name.replace(" ", "_") for organ in runner.ORGANS},
+        )
 
     def test_teaching_frame_makes_the_difference_explicit(self) -> None:
         intro = teaching_intro("knowledge", 3, 1, "claims had no grounding")
@@ -120,22 +118,7 @@ class LocalScenarioDataTests(unittest.TestCase):
         self.root = Path(__file__).resolve().parents[1]
 
     def test_replays_exist_for_every_organ(self) -> None:
-        replay_names = (
-            "instructions",
-            "model",
-            "knowledge",
-            "tools",
-            "skills",
-            "memory",
-            "guardrails",
-            "orchestration",
-            "identity",
-            "observability",
-            "reflex_arc",
-            "spine",
-            "metabolism",
-            "learning",
-        )
+        replay_names = tuple(organ.name.replace(" ", "_") for organ in runner.ORGANS)
         for replay_name in replay_names:
             payload = json.loads((self.root / "replays" / f"{replay_name}.json").read_text(encoding="utf-8"))
             self.assertTrue(payload)
@@ -161,6 +144,56 @@ class LocalScenarioDataTests(unittest.TestCase):
         self.assertEqual(report.status, "ok")
         self.assertIn("order 4471", result_path.read_text(encoding="utf-8"))
         result_path.unlink()
+
+    def test_planning_distinguishes_plan_from_execution(self) -> None:
+        module = importlib.import_module("anatomy.organs.o12_planning")
+        report = asyncio.run(
+            module.run(
+                question="",
+                replay=False,
+                record=False,
+                trace=False,
+                stage=False,
+                autopsy="",
+                beat=13,
+                kill=False,
+                resume=False,
+                tool_search=False,
+            )
+        )
+
+        rendered = "\n".join(report.output)
+        self.assertIn("Plan validation (before execution)", rendered)
+        self.assertNotIn("[DONE]", rendered)
+
+    def test_belief_update_persists_decision_threshold(self) -> None:
+        module = importlib.import_module("anatomy.organs.o15_beliefs")
+        belief_path = self.root / ".anatomy-beliefs.json"
+        belief_path.unlink(missing_ok=True)
+        try:
+            report = asyncio.run(
+                module.run(
+                    question="",
+                    replay=False,
+                    record=False,
+                    trace=False,
+                    stage=False,
+                    autopsy="",
+                    beat=14,
+                    kill=False,
+                    resume=False,
+                    tool_search=False,
+                )
+            )
+            beliefs = json.loads(belief_path.read_text(encoding="utf-8"))
+
+            self.assertEqual(
+                beliefs["customer_decision_thresholds"]["Contoso_auto_approve_days_late"],
+                4,
+            )
+            self.assertIn("days_late >= 4 (was >= 5)", "\n".join(report.output))
+        finally:
+            belief_path.unlink(missing_ok=True)
 
     def test_metabolism_budget_stop_is_success(self) -> None:
         module = importlib.import_module("anatomy.organs.o14_metabolism")

@@ -14,6 +14,8 @@ from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.widgets import Footer, RichLog, Static
 
+from anatomy.runner import ORGANS as REGISTERED_ORGANS
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -139,22 +141,11 @@ SCENES = (
         "THE DISSECTION BEGINS",
         "Meet Ada. Then watch her come alive.",
         "Harry Arce | SME&C DSE | Apps & AI | US East",
-        "One agent. Fourteen working organs. Two honest gaps. Every claim will leave evidence.",
+        "One agent. Sixteen working organs. Every claim will leave evidence.",
         "A useful agent is not a model with a clever prompt. It is a living system of capabilities and constraints.",
     ),
     Scene(
         2,
-        "COLD OPEN | REFLEX ARC",
-        "Nobody typed anything.",
-        "An escalation file lands. Ada is dormant. The event itself wakes her, and she acts.",
-        "Watch for the wake time, the source event, and the decision artifact written back to disk.",
-        "Autonomy begins when the work can find the agent.",
-        (11,),
-        (step("Replay the autonomous wake-up", "beat", "12", "--replay", "--stage"),),
-        (step("Trigger the autonomous wake-up", "beat", "12", "--stage", cleanup=("onedrive/result.txt",)),),
-    ),
-    Scene(
-        3,
         "ACT I | A BRAIN IS NOT AN AGENT",
         "Same model. Different behavior.",
         "Hold the question constant. Change only the instructions. The answer changes immediately, but it still lacks evidence.",
@@ -165,7 +156,7 @@ SCENES = (
         (step("Call the live model", "beat", "0", "--stage", "--reset"),),
     ),
     Scene(
-        4,
+        3,
         "ACT I | KNOWLEDGE",
         "Confidence is not evidence.",
         "Ada grounds the refund answer in the actual policy instead of inventing a plausible rule.",
@@ -176,7 +167,7 @@ SCENES = (
         (step("Retrieve the local policy evidence", "beat", "1", "--stage"),),
     ),
     Scene(
-        5,
+        4,
         "ACT II | TOOLS",
         "A fluent answer cannot query an order database.",
         "Ada crosses from talking about the world to inspecting a system of record.",
@@ -187,7 +178,7 @@ SCENES = (
         (step("Query the local order database", "beat", "2", "--stage"),),
     ),
     Scene(
-        6,
+        5,
         "ACT II | TOOL DISCOVERY",
         "New capability. No Python edit.",
         "A toolbox configuration advertises one more business capability, and discovery finds it on demand.",
@@ -198,7 +189,7 @@ SCENES = (
         (step("Discover the configured tool", "tools", "--tool-search", "--stage"),),
     ),
     Scene(
-        7,
+        6,
         "ACT II | MEMORY",
         "A new thread does not have to mean amnesia.",
         "Ada carries the relevant customer preference across distinct sessions without asking for it again.",
@@ -209,7 +200,7 @@ SCENES = (
         (step("Exercise local durable memory", "beat", "4", "--stage"),),
     ),
     Scene(
-        8,
+        7,
         "ACT III | GUARDRAILS",
         "More capability requires stronger boundaries.",
         "Ada faces a legitimate request, a cross-customer data leak, and a prompt injection.",
@@ -220,7 +211,7 @@ SCENES = (
         (step("Run the local guardrail checks", "beat", "5", "--stage"),),
     ),
     Scene(
-        9,
+        8,
         "ACT III | ORCHESTRATION",
         "One opaque prompt becomes an auditable workflow.",
         "Research, writing, and review become explicit steps with visible handoffs.",
@@ -231,7 +222,7 @@ SCENES = (
         (step("Run the local workflow", "beat", "6", "--stage"),),
     ),
     Scene(
-        10,
+        9,
         "ACT III | IDENTITY",
         "Who acted, and what were they allowed to do?",
         "This local simulation binds Ada to explicit claims and a least-privilege policy. Production uses managed identity and RBAC.",
@@ -242,7 +233,7 @@ SCENES = (
         (step("Run the local RBAC simulation", "beat", "7", "--stage"),),
     ),
     Scene(
-        11,
+        10,
         "ACT III | OBSERVABILITY",
         "At 3:00 a.m., the final answer is not enough.",
         "Ada exposes the path from request to policy lookup, order lookup, and drafted decision.",
@@ -253,7 +244,7 @@ SCENES = (
         (step("Emit the local trace", "beat", "8", "--trace", "--stage"),),
     ),
     Scene(
-        12,
+        11,
         "ACT IV | METABOLISM",
         "Autonomy gets a hard budget.",
         "Charges are accepted atomically until the next operation would cross Ada's spend cap.",
@@ -264,8 +255,8 @@ SCENES = (
         (step("Exercise the local spend cap", "beat", "9", "--stage"),),
     ),
     Scene(
-        13,
-        "CLIMAX | SPINE: KILL",
+        12,
+        "ACT IV | SPINE: KILL",
         "Now we kill the process.",
         "Ada completes two consequential steps, checkpoints them, and exits in the middle of the job.",
         "Exit code 1 is expected. The surviving checkpoint is the evidence, not an error to hide.",
@@ -274,8 +265,8 @@ SCENES = (
         (SPINE_KILL_STEP,),
     ),
     Scene(
-        14,
-        "CLIMAX | SPINE: RESUME",
+        13,
+        "ACT IV | SPINE: RESUME",
         "Completed work does not run twice.",
         "Restart Ada from the checkpoint left by the previous scene.",
         "The first two steps say SKIP with original timestamps. Only unfinished work says RUN.",
@@ -284,7 +275,7 @@ SCENES = (
         (SPINE_RESUME_STEP,),
     ),
     Scene(
-        15,
+        14,
         "ACT V | SKILLS + LEARNING",
         "Expertise loads on demand. Failure improves the scaffold.",
         "Ada selects one modular skill, then a critic loop turns measured failures into better instructions.",
@@ -295,25 +286,49 @@ SCENES = (
         (step("Run the local skill and critic loop", "beat", "11", "--stage"),),
     ),
     Scene(
+        15,
+        "FINAL ACT | REFLEX ARC",
+        "Nobody typed anything.",
+        "An escalation file lands. Ada is dormant. The event itself wakes her, and she acts.",
+        "Watch for the wake time, source event, and decision artifact written back to disk.",
+        "Autonomy begins when the work can find the agent.",
+        (11,),
+        (step("Replay the autonomous wake-up", "beat", "12", "--replay", "--stage"),),
+        (step("Trigger the autonomous wake-up", "beat", "12", "--stage", cleanup=("onedrive/result.txt",)),),
+    ),
+    Scene(
         16,
-        "HONEST ANATOMY | TWO GAPS",
-        "Useful does not mean finished.",
-        "Organ 12, Opposable Thumbs, represents direct computer use. Organ 15, Face, represents a persistent external persona. Both remain planned here.",
-        "They stay visibly unlit because this repository does not execute them.",
-        "A trustworthy demo labels the frontier instead of pretending it shipped.",
-        (12, 15),
+        "FINAL ACT | PLANNING",
+        "Waking up is not the same as knowing what to do.",
+        "Ada turns the escalation into four ordered, inspectable sub-goals before execution.",
+        "Follow Verify, CheckPolicy, Decide, and Compose; each dependency is visible.",
+        "Planning turned reactive autonomy into an auditable roadmap.",
+        (12,),
+        (step("Replay the goal decomposition", "beat", "13", "--replay", "--stage"),),
+        (step("Build the local execution plan", "beat", "13", "--stage"),),
     ),
     Scene(
         17,
-        "THE WHOLE SYSTEM",
-        "Fourteen working organs. Two deliberate gaps.",
-        "Intelligence, evidence, action, continuity, control, recovery, economics, and improvement now form one system.",
-        "Every capability enables something useful and constrains something dangerous.",
-        "The anatomy matters because no single organ can make an agent dependable.",
-        tuple(number for number in range(1, 17) if number not in (12, 15)),
+        "FINAL ACT | BELIEFS",
+        "The next case should not start from zero.",
+        "Ada records which verified facts changed and shows how that explicit state changes the next decision.",
+        "Compare customer tier, approval rate, and Contoso's decision threshold before and after.",
+        "Beliefs made learning persistent, inspectable, and useful on the next run.",
+        (15,),
+        (step("Replay the belief update", "beat", "14", "--replay", "--stage"),),
+        (step("Persist the local belief update", "beat", "14", "--stage", cleanup=(".anatomy-beliefs.json",)),),
     ),
     Scene(
         18,
+        "THE WHOLE SYSTEM",
+        "Sixteen working organs. One dependable agent.",
+        "Intelligence, evidence, action, continuity, control, recovery, economics, and improvement now form one system.",
+        "Every capability enables something useful and constrains something dangerous.",
+        "The anatomy matters because no single organ can make an agent dependable.",
+        tuple(range(1, 17)),
+    ),
+    Scene(
+        19,
         "TAKE IT WITH YOU",
         "Build the next organ.",
         "aka.ms/agent-framework  |  Agent Framework docs and samples\naka.ms/mcp              |  Microsoft's public MCP catalog\naka.ms/microsoftfoundry |  Microsoft Foundry Labs",
@@ -324,22 +339,6 @@ SCENES = (
 
 EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
     2: (
-        CodeExhibit(
-            "Add the organ: wake the agent from an external event",
-            "examples/organ_recipes.py",
-            "async def handle_business_event(",
-            "python",
-            "An event handler turns a business event into an agent run without waiting for chat.",
-            (
-                "Connect this handler to OneDrive, SharePoint, Event Grid, or Service Bus.",
-                "Keep the trigger adapter separate from the agent so event sources stay swappable.",
-            ),
-            "Use an event trigger or Power Automate flow to start the agent when a file, message, or business event arrives.",
-            before=0,
-            after=3,
-        ),
-    ),
-    3: (
         CodeExhibit(
             "Add the organs: model plus instructions",
             "examples/organ_recipes.py",
@@ -355,7 +354,7 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             after=8,
         ),
     ),
-    4: (
+    3: (
         CodeExhibit(
             "Add the organ: grounded knowledge",
             "examples/organ_recipes.py",
@@ -371,7 +370,7 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             after=5,
         ),
     ),
-    5: (
+    4: (
         CodeExhibit(
             "Add the organ: a governed business tool",
             "examples/organ_recipes.py",
@@ -387,7 +386,7 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             after=14,
         ),
     ),
-    6: (
+    5: (
         CodeExhibit(
             "Our toolbox: new capability declared in configuration",
             "toolbox.add-tool.yaml",
@@ -403,7 +402,7 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             after=2,
         ),
     ),
-    7: (
+    6: (
         CodeExhibit(
             "Add the organ: durable customer memory",
             "examples/organ_recipes.py",
@@ -419,7 +418,7 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             after=5,
         ),
     ),
-    8: (
+    7: (
         CodeExhibit(
             "Add the organ: guardrail middleware",
             "examples/organ_recipes.py",
@@ -435,7 +434,7 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             after=5,
         ),
     ),
-    9: (
+    8: (
         CodeExhibit(
             "Add the organ: a reviewed multi-agent workflow",
             "examples/organ_recipes.py",
@@ -451,7 +450,7 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             after=7,
         ),
     ),
-    10: (
+    9: (
         CodeExhibit(
             "Add the organ: keyless Entra identity",
             "examples/organ_recipes.py",
@@ -467,7 +466,7 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             after=8,
         ),
     ),
-    11: (
+    10: (
         CodeExhibit(
             "Add the organ: telemetry middleware",
             "examples/organ_recipes.py",
@@ -483,7 +482,7 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             after=5,
         ),
     ),
-    12: (
+    11: (
         CodeExhibit(
             "Add the organ: a hard run budget",
             "examples/organ_recipes.py",
@@ -499,7 +498,7 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             after=5,
         ),
     ),
-    13: (
+    12: (
         CodeExhibit(
             "Add the organ: persist a checkpoint",
             "examples/organ_recipes.py",
@@ -515,7 +514,7 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             after=2,
         ),
     ),
-    14: (
+    13: (
         CodeExhibit(
             "Add the organ: resume only unfinished work",
             "examples/organ_recipes.py",
@@ -531,7 +530,7 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             after=3,
         ),
     ),
-    15: (
+    14: (
         CodeExhibit(
             "Add the organ: modular skill selection",
             "examples/organ_recipes.py",
@@ -561,7 +560,55 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             after=3,
         ),
     ),
+    15: (
+        CodeExhibit(
+            "Add the organ: wake the agent from an external event",
+            "examples/organ_recipes.py",
+            "async def handle_business_event(",
+            "python",
+            "An event handler turns a business event into an agent run without waiting for chat.",
+            (
+                "Connect this handler to OneDrive, SharePoint, Event Grid, or Service Bus.",
+                "Keep the trigger adapter separate from the agent so event sources stay swappable.",
+            ),
+            "Use an event trigger or Power Automate flow to start the agent when a file, message, or business event arrives.",
+            before=0,
+            after=3,
+        ),
+    ),
+    16: (
+        CodeExhibit(
+            "Add the organ: decompose before acting",
+            "examples/organ_recipes.py",
+            "def add_planning(client: Any, goal_decomposer: Any) -> Agent:",
+            "python",
+            "Attach one clearly described planning tool and require an ordered plan before execution.",
+            (
+                "Planning defines what should happen; orchestration controls how those steps run.",
+                "Keep the returned plan structured so every dependency can be traced and tested.",
+            ),
+            "Use generative orchestration to choose actions, or an agent flow when the sequence must be explicit and deterministic.",
+            before=0,
+            after=9,
+        ),
+    ),
     17: (
+        CodeExhibit(
+            "Add the organ: explicit world state",
+            "examples/organ_recipes.py",
+            "def add_beliefs(client: Any, belief_provider: Any, update_belief: Any) -> Agent:",
+            "python",
+            "Load verified world state as context and expose a governed tool for persisting updates.",
+            (
+                "Beliefs describe the world; memory preserves user continuity; learning improves the agent scaffold.",
+                "Persist only evidence-backed changes and retain an audit trail.",
+            ),
+            "Store governed state in Dataverse and retrieve or update it through authenticated actions or agent flows.",
+            before=0,
+            after=10,
+        ),
+    ),
+    18: (
         CodeExhibit(
             "Compose the anatomy through public attachment points",
             "examples/organ_recipes.py",
@@ -669,23 +716,9 @@ ADA_BANNER = (
     "└        a n a t o m y   o f   a n   a g e n t        ┘",
 )
 
-ANATOMY = (
-    (1, "Instructions", True),
-    (2, "Model", True),
-    (3, "Knowledge", True),
-    (4, "Tools", True),
-    (5, "Skills", True),
-    (6, "Memory", True),
-    (7, "Guardrails", True),
-    (8, "Orchestration", True),
-    (9, "Identity", True),
-    (10, "Observability", True),
-    (11, "Reflex Arc", True),
-    (12, "Opposable Thumbs", False),
-    (13, "Spine", True),
-    (14, "Metabolism", True),
-    (15, "Face", False),
-    (16, "Learning", True),
+ANATOMY = tuple(
+    (organ.number, organ.name.title(), organ.status == "ready")
+    for organ in REGISTERED_ORGANS
 )
 
 
@@ -793,6 +826,8 @@ class AnatomyShow(App[None]):
         Binding("r", "toggle_mode", "Replay / live", priority=True),
         Binding("home", "first", "First", priority=True),
         Binding("end", "last", "Last", priority=True),
+        Binding("pageup", "scroll_up", "Evidence up", priority=True),
+        Binding("pagedown", "scroll_down", "Evidence down", priority=True),
         Binding("escape", "cancel_demo", "Cancel demo", priority=True),
         Binding("q", "quit", "Quit", priority=True),
     ]
@@ -853,7 +888,7 @@ class AnatomyShow(App[None]):
         for line in ADA_BANNER:
             style = "#35637A" if line[:1] in {"\u250c", "\u2514"} else "#50E6FF"
             text.append(f"{line}\n", style=style)
-        text.append("\nFourteen organs run here. Two are still on the design bench.", style="#9FB7C2")
+        text.append("\nSixteen organs run here. Each one leaves evidence.", style="#9FB7C2")
         return text
 
     def _stack_text(self) -> Text:
@@ -865,7 +900,7 @@ class AnatomyShow(App[None]):
         return text
 
     def _anatomy_text(self, scene: Scene) -> Text:
-        completed = {organ for prior in SCENES[: self.scene_index + 1] for organ in prior.organs if organ not in (12, 15)}
+        completed = {organ for prior in SCENES[: self.scene_index + 1] for organ in prior.organs}
         text = Text("ADA / ORGAN VITALS\n\n", style="bold #50E6FF")
         for number, name, implemented in ANATOMY:
             if not implemented:
@@ -877,7 +912,7 @@ class AnatomyShow(App[None]):
             else:
                 marker, style, suffix = "○", "#637985", ""
             text.append(f"{marker} {number:02d}  {name}{suffix}\n", style=style)
-        text.append(f"\n{len(completed):02d} / 14 RUNNABLE ONLINE", style="bold #EAF4F4")
+        text.append(f"\n{len(completed):02d} / {len(ANATOMY)} RUNNABLE ONLINE", style="bold #EAF4F4")
         return text
 
     def _render_controls(self) -> None:
@@ -933,7 +968,15 @@ class AnatomyShow(App[None]):
             log.write(Text(f"WHY IT MATTERS {note}", style="#7EE787"))
         if exhibit.copilot_studio:
             log.write(Text(f"COPILOT STUDIO {exhibit.copilot_studio}", style="#50E6FF"))
-        log.write(Text("\nPress C for the next exhibit, or Space to run the evidence.", style="dim"))
+        scene = SCENES[self.scene_index]
+        next_action = "Space runs the evidence" if scene.safe_steps else "Left/Right continues the story"
+        log.write(Text(f"\nPress C for the next exhibit. {next_action}.", style="dim"))
+
+    def action_scroll_up(self) -> None:
+        self.query_one("#console", RichLog).scroll_page_up()
+
+    def action_scroll_down(self) -> None:
+        self.query_one("#console", RichLog).scroll_page_down()
 
     def action_previous(self) -> None:
         if not self.running_demo and self.scene_index > 0:

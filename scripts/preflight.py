@@ -22,8 +22,10 @@ ORGAN_MODULES = (
     "anatomy.organs.o09_identity",
     "anatomy.organs.o10_observability",
     "anatomy.organs.o11_reflex_arc",
+    "anatomy.organs.o12_planning",
     "anatomy.organs.o13_spine",
     "anatomy.organs.o14_metabolism",
+    "anatomy.organs.o15_beliefs",
     "anatomy.organs.o16_learning",
 )
 REQUIRED_REPLAYS = (
@@ -38,8 +40,10 @@ REQUIRED_REPLAYS = (
     "identity",
     "observability",
     "reflex_arc",
+    "planning",
     "spine",
     "metabolism",
+    "beliefs",
     "learning",
 )
 

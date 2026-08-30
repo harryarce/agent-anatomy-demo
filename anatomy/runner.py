@@ -43,8 +43,10 @@ ORGANS = (
     Organ(9, "identity", 7, "ready", "SIMULATED", "anatomy.organs.o09_identity"),
     Organ(10, "observability", 8, "ready", "LOCAL IMPLEMENTATION", "anatomy.organs.o10_observability"),
     Organ(11, "reflex arc", 12, "ready", "LOCAL IMPLEMENTATION", "anatomy.organs.o11_reflex_arc"),
+    Organ(12, "planning", 13, "ready", "LOCAL IMPLEMENTATION", "anatomy.organs.o12_planning"),
     Organ(13, "spine", 10, "ready", "LOCAL IMPLEMENTATION", "anatomy.organs.o13_spine"),
     Organ(14, "metabolism", 9, "ready", "LOCAL IMPLEMENTATION", "anatomy.organs.o14_metabolism"),
+    Organ(15, "beliefs", 14, "ready", "LOCAL IMPLEMENTATION", "anatomy.organs.o15_beliefs"),
     Organ(16, "learning", 11, "ready", "LOCAL IMPLEMENTATION", "anatomy.organs.o16_learning"),
 )
 
@@ -67,6 +69,8 @@ BEAT_SEQUENCE = {
     10: ["spine"],
     11: ["skills", "learning"],
     12: ["reflex arc"],
+    13: ["planning"],
+    14: ["beliefs"],
 }
 
 
@@ -235,7 +239,7 @@ def build_parser() -> argparse.ArgumentParser:
     present.add_argument("--from", dest="from_beat", type=int, default=0)
 
     show = subparsers.add_parser("show", help="launch the fullscreen, keyboard-driven live presentation")
-    show.add_argument("--from", dest="from_scene", type=int, choices=range(1, 19), default=1)
+    show.add_argument("--from", dest="from_scene", type=int, choices=range(1, 20), default=1)
     show.add_argument("--live", action="store_true", help="prefer live and local execution over committed evidence")
 
     demo = subparsers.add_parser("demo")

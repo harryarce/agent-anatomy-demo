@@ -140,3 +140,26 @@ def compose_agent(
         context_providers=providers,
         middleware=middleware,
     )
+
+
+def add_planning(client: Any, goal_decomposer: Any) -> Agent:
+    return Agent(
+        client=client,
+        instructions=(
+            "Before acting, decompose the goal into ordered, measurable sub-steps. "
+            "Return each dependency and success condition."
+        ),
+        tools=[goal_decomposer],
+    )
+
+
+def add_beliefs(client: Any, belief_provider: Any, update_belief: Any) -> Agent:
+    return Agent(
+        client=client,
+        instructions=(
+            "Use only evidence-backed world state. "
+            "Explain how any persisted update changes the next decision."
+        ),
+        context_providers=[belief_provider],
+        tools=[update_belief],
+    )
