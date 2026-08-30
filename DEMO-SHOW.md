@@ -89,7 +89,26 @@ If activating the virtual environment is blocked, launch it directly:
 | `Esc` | Cancel the active command without starting a fallback |
 | `Q` | Exit the show |
 
+## Read the Output as a Story
+
+Every executable scene uses the same visible rhythm: the user creates the need, an actor handles each piece of evidence, and the narrator closes with the takeaway. Introduce the labels once near the beginning, then let the audience follow the handoffs:
+
+| Label | Actor |
+|---|---|
+| `USER` | The person or request that starts the scene |
+| `APPLICATION TEAM` | The people who configure Ada's instructions, tools, and policies |
+| `AI / MODEL` | Generated reasoning or response text |
+| `TOOL` | A lookup, external result, or untrusted tool payload |
+| `AGENT · <ROLE>` | A specialist in a multi-agent workflow |
+| `ORGAN · <NAME>` | The capability making a decision or changing behavior |
+| `SYSTEM` | Runtime, checkpoint, or telemetry evidence |
+| `NARRATOR` | The scene's closing takeaway |
+
+For each scene, read only three turns aloud: `USER`, the decisive actor line, and `NARRATOR`. The remaining lines are supporting evidence for the audience to scan.
+
 Wait for `EVIDENCE COMPLETE` before advancing. Presenter-only scenes do not run a command when `Space` is pressed.
+
+After a demo finishes, the evidence window automatically returns to the top so the speaker can present it in story order. Use `Page Down` to advance through longer output.
 
 ## Code Exhibits
 
@@ -116,7 +135,7 @@ Navigate through all 19 scenes, but press `Space` only where the table says to r
 | Scene | Moment | Run evidence? | Target |
 |---|---|---:|---:|
 | 1 | Introduction | No | 2 min |
-| 2 | Brain alone: Instructions + Model | Yes | 4 min |
+| 2 | Brain alone: Model, then Instructions | Yes | 4 min |
 | 3 | Knowledge | Yes | 3 min |
 | 4 | Tools | Yes | 3 min |
 | 5-6 | Tool discovery + Memory | No; explain from the scene | 3 min |

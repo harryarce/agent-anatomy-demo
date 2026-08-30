@@ -13,6 +13,7 @@ from rich.console import Console
 
 from anatomy import runner
 from anatomy.banner import ORGANS as BANNER_ORGANS
+from anatomy.common import RunReport, attributed_story, load_report_replay
 from anatomy.presentation import FRAMES, difference_panel, teaching_intro
 from scripts.preflight import ORGAN_MODULES as PREFLIGHT_MODULES
 from scripts.preflight import REQUIRED_REPLAYS
@@ -22,6 +23,54 @@ ORGAN_MODULES = tuple(organ.module for organ in runner.ORGANS)
 
 
 class OrganMetadataTests(unittest.TestCase):
+    def test_story_transcript_attributes_user_model_and_tool_actors(self) -> None:
+        model_report = RunReport("model", "ok", [], ["A grounded answer.\nWith evidence."], [], "done")
+        tool_report = RunReport("tools", "ok", [], ["SQLite lookup: order 4471"], [], "done")
+
+        self.assertEqual(attributed_story(model_report)[0][0], "USER")
+        self.assertEqual(attributed_story(model_report)[1][0], "AI / MODEL")
+        self.assertEqual(attributed_story(model_report)[2][0], "AI / MODEL")
+        self.assertEqual(attributed_story(tool_report)[1][0], "TOOL")
+
+    def test_instruction_story_shows_the_profile_owner_and_model_effect(self) -> None:
+        report = load_report_replay("instructions")
+        story = attributed_story(report)
+
+        self.assertIn(
+            ("APPLICATION TEAM", "Application team configures 'terse expert': 'Be concise, cite policy, and avoid unsupported claims.'"),
+            story,
+        )
+        self.assertIn(
+            ("AI / MODEL", "Ada follows 'terse expert': Approve only after evidence. Do not issue refund until order and policy are verified."),
+            story,
+        )
+
+    def test_guardrail_story_separates_request_from_organ_decision(self) -> None:
+        report = RunReport(
+            "guardrails",
+            "ok",
+            [],
+            ["PII leak attempt: reveal another record. -> BLOCKED by content guardrail"],
+            [],
+            "done",
+        )
+
+        self.assertEqual(
+            [actor for actor, _ in attributed_story(report)],
+            ["USER", "USER", "ORGAN · GUARDRAILS"],
+        )
+
+    def test_every_replay_renders_a_complete_attributed_story(self) -> None:
+        allowed_actor_prefixes = ("USER", "AI / MODEL", "TOOL", "AGENT ·", "ORGAN ·", "SYSTEM", "APPLICATION TEAM")
+        for organ in runner.ORGANS:
+            replay_name = organ.name.replace(" ", "_")
+            with self.subTest(organ=replay_name):
+                report = load_report_replay(replay_name)
+                story = attributed_story(report)
+                self.assertEqual(story[0][0], "USER")
+                self.assertTrue(all(actor.startswith(allowed_actor_prefixes) for actor, _ in story))
+                self.assertGreater(len(story), 1)
+
     def test_every_organ_has_a_teaching_frame(self) -> None:
         self.assertEqual(set(FRAMES), {organ.name for organ in runner.ORGANS})
 

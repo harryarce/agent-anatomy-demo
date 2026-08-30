@@ -43,7 +43,7 @@ python -m anatomy story --from 5 --replay
 
 | Beat | Organ(s) | Why it exists |
 |---|---|---|
-| 0 | Instructions + Model | Opening failure: confident but wrong policy claim |
+| 0 | Model, then Instructions | Raw baseline followed by behavior control |
 | 1 | Knowledge | Citation-backed policy clause replaces guess |
 | 2 | Tools | Order lookup proves 4471 facts |
 | 3 | Tools (add-tool) | New capability from toolbox config only |

@@ -147,13 +147,13 @@ SCENES = (
     Scene(
         2,
         "ACT I | A BRAIN IS NOT AN AGENT",
-        "Same model. Different behavior.",
-        "Hold the question constant. Change only the instructions. The answer changes immediately, but it still lacks evidence.",
-        "Three instruction sets expose the control surface; the raw model exposes the remaining risk.",
+        "First, the brain. Then give it a job.",
+        "Hold the question constant. Start with the raw model, then add instructions. Behavior changes immediately, but evidence is still missing.",
+        "The raw model establishes the baseline; three instruction sets expose the first control surface.",
         "The model supplies intelligence. Instructions give that intelligence a job.",
-        (1, 2),
-        (step("Run the brain-alone comparison", "beat", "0", "--replay", "--stage", "--reset"),),
-        (step("Call the live model", "beat", "0", "--stage", "--reset"),),
+        (2, 1),
+        (step("Run the raw model, then instructions", "beat", "0", "--replay", "--stage", "--reset"),),
+        (step("Call the live model, then instructions", "beat", "0", "--stage", "--reset"),),
     ),
     Scene(
         3,
@@ -649,6 +649,22 @@ def _classify_panel(line: str) -> str:
 
 
 def _body_style(stripped: str) -> str:
+    if stripped.startswith("[USER]"):
+        return "bold #F2CC60"
+    if stripped.startswith("[AI / MODEL]"):
+        return "#50E6FF"
+    if stripped.startswith("[APPLICATION TEAM]"):
+        return "bold #FF9E64"
+    if stripped.startswith("[TOOL]"):
+        return "#7EE787"
+    if stripped.startswith("[AGENT ·"):
+        return "#C792EA"
+    if stripped.startswith("[ORGAN ·"):
+        return "bold #FF9E64"
+    if stripped.startswith("[SYSTEM]"):
+        return "#7FA6B8"
+    if stripped.startswith("[NARRATOR]"):
+        return "bold #F2CC60"
     if stripped.startswith("ORGANS FIRING"):
         return "bold #C792EA"
     if any(marker in stripped for marker in ("BLOCKED", "BUDGET STOP", "TERMINATED", "FAILED", "403")):
@@ -1030,6 +1046,7 @@ class AnatomyShow(App[None]):
                 log.write(Text("\nEVIDENCE COMPLETE", style="bold #7EE787"))
             elif not self._cancel_requested:
                 log.write(Text("\nDEMO STOPPED  |  Review the output above before continuing.", style="bold #FF4D6D"))
+            self.call_after_refresh(log.scroll_home, animate=False, immediate=True)
         finally:
             self._process = None
             self.running_demo = False

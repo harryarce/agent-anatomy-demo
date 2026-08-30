@@ -14,6 +14,8 @@ For the fullscreen show controls, 45-minute route, and presenter recovery flow, 
 
 Replay mode reads committed JSON transcripts from `replays/`. Local mode executes real local mechanisms. Only the Model organ currently makes a live Foundry inference call. Features labeled `LOCAL IMPLEMENTATION` or `SIMULATED` are described in `KNOWN-GAPS.md`.
 
+All modes render evidence as an actor-attributed story. `USER` opens the scene; `AI / MODEL`, `TOOL`, `AGENT`, `ORGAN`, or `SYSTEM` owns each visible action; and `NARRATOR` states the takeaway. This format is shared by the CLI, fullscreen show, and autopsy comparison.
+
 ## 2. One-Time Setup
 
 Open PowerShell in the project directory:
@@ -170,8 +172,8 @@ python -m anatomy beat 1 --replay --stage
 
 What to point out:
 
-- Beat 0 holds the question constant while Instructions change behavior.
-- The model has no policy or order evidence.
+- Beat 0 starts with the raw model, then holds the question constant while Instructions change behavior.
+- Neither response has policy or order evidence.
 - Beat 1 displays the real Section 4.2 clause and its local citation.
 
 ### Slot 2: Tools and the zero-code capability change

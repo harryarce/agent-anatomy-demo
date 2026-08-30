@@ -132,7 +132,7 @@ async def run_report(
     return RunReport(
         organ="model",
         status=status,
-        firing=["Instructions", "Model", "Observability", "Metabolism"],
+        firing=["Model", "Observability", "Metabolism"],
         output=output,
         payoff=payoff,
         landing_line=LANDING_LINE,

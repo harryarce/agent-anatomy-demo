@@ -10,9 +10,10 @@ from rich.console import Console
 from rich.columns import Columns
 from rich.panel import Panel
 from rich.table import Table
+from rich.text import Text
 
 from anatomy.banner import firing_line, organ_banner, payoff, vitals_panel
-from anatomy.common import DEFAULT_QUESTION, RunReport, save_report_replay
+from anatomy.common import DEFAULT_QUESTION, RunReport, attributed_story, attributed_story_text, save_report_replay
 from anatomy.presentation import difference_panel, teaching_intro
 from scripts.preflight import main as preflight_main
 
@@ -56,7 +57,7 @@ ORGAN_ALIASES = {
     "reflex_arc": "reflex arc",
 }
 BEAT_SEQUENCE = {
-    0: ["instructions", "model"],
+    0: ["model", "instructions"],
     1: ["knowledge"],
     2: ["tools"],
     3: ["tools"],
@@ -148,9 +149,9 @@ async def _run_one(organ_name: str, args: argparse.Namespace, *, beat: int | Non
         console.print(
             Columns(
                 [
-                    Panel("\n".join(intact.output), title="INTACT", border_style="#50E6FF", expand=True),
+                    Panel(attributed_story_text(intact, QUESTION), title="INTACT", border_style="#50E6FF", expand=True),
                     Panel(
-                        "\n".join(ablated.output),
+                        attributed_story_text(ablated, QUESTION),
                         title=f"WITHOUT {args.autopsy.upper()}",
                         border_style="#FF4D6D",
                         expand=True,
@@ -183,13 +184,19 @@ async def _run_one(organ_name: str, args: argparse.Namespace, *, beat: int | Non
     console.print()
     console.print(firing_line(report.firing))
     console.print()
-    for line in report.output:
-        console.print(line)
+    for actor, line in attributed_story(report, QUESTION):
+        actor_text = Text()
+        actor_text.append(f"[{actor}]", style="bold #50E6FF")
+        actor_text.append(f"  {line}")
+        console.print(actor_text)
     console.print(payoff(report.payoff, _usage_line(report)))
     if present:
         console.print(difference_panel(organ.name, report.landing_line))
     else:
-        console.print(f"[bold]{report.landing_line}[/]")
+        takeaway = Text()
+        takeaway.append("[NARRATOR]", style="bold #F2CC60")
+        takeaway.append(f"  {report.landing_line}", style="bold")
+        console.print(takeaway)
 
     if args.record:
         path = save_report_replay(report)

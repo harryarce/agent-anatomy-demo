@@ -2,7 +2,6 @@
   "organ": "model",
   "status": "ok",
   "firing": [
-    "Instructions",
     "Model",
     "Observability",
     "Metabolism"

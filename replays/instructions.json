@@ -6,15 +6,17 @@
     "Model"
   ],
   "output": [
-    "Persona answers (same question, same model):",
-    "- terse_expert: Approve only after evidence. Do not issue refund until order and policy are verified.",
-    "- patient_teacher: Step 1: confirm order 4471 and delivery timeline. Step 2: cite policy clause before deciding.",
-    "- hostile_reviewer: Current evidence is insufficient. Any confident refund claim is a process defect.",
-    "Fabricated baseline failure: 'Section 4.2 guarantees full refunds for any delay.'",
-    "(This line is intentionally incorrect to tee up Knowledge in beat 1.)"
+    "Demo setup: the application team owns Ada's instruction profiles; the model does not invent them.",
+    "Application team configures 'terse expert': 'Be concise, cite policy, and avoid unsupported claims.'",
+    "Ada follows 'terse expert': Approve only after evidence. Do not issue refund until order and policy are verified.",
+    "Application team configures 'patient teacher': 'Explain each verification step and show where evidence is missing.'",
+    "Ada follows 'patient teacher': Step 1: confirm order 4471 and delivery timeline. Step 2: cite policy clause before deciding.",
+    "Application team configures 'hostile reviewer': 'Challenge every unsupported statement and demand citations.'",
+    "Ada follows 'hostile reviewer': Current evidence is insufficient. Any confident refund claim is a process defect.",
+    "Demo setup: intentionally fabricated failure example for Knowledge next: 'Section 4.2 guarantees full refunds for any delay.'"
   ],
   "payoff": [
-    "Instruction variants were loaded from separate files.",
+    "The application team supplied the three profiles from separate instruction files.",
     "The visible fabricated policy claim creates the failure that Knowledge fixes next."
   ],
   "landing_line": "The model is the same; instructions changed behavior immediately.",

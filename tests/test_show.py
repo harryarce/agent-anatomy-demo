@@ -8,6 +8,7 @@ from importlib import metadata
 from textual.widgets import RichLog, Static
 
 from anatomy import runner
+from anatomy.common import load_report_replay
 from anatomy.show import ANATOMY, EXHIBITS, ROOT, SCENES, AnatomyShow, load_exhibit, stack_report
 
 
@@ -28,6 +29,13 @@ def _code_density(snippet: str) -> float:
 
 
 class ShowRouteTests(unittest.TestCase):
+    def test_opening_runs_raw_model_before_instructions(self) -> None:
+        self.assertEqual(runner.BEAT_SEQUENCE[0], ["model", "instructions"])
+        opening_demo = SCENES[1]
+        self.assertEqual(opening_demo.organs, (2, 1))
+        self.assertIn("raw model", opening_demo.safe_steps[0].label)
+        self.assertEqual(load_report_replay("model").firing, ["Model", "Observability", "Metabolism"])
+
     def test_route_is_complete_and_numbered(self) -> None:
         self.assertEqual([scene.number for scene in SCENES], list(range(1, len(SCENES) + 1)))
         self.assertEqual(len(SCENES), 19)
@@ -239,6 +247,17 @@ class ShowInteractionTests(unittest.IsolatedAsyncioTestCase):
             app._render_scene()
             await app.action_run_demo()
             self.assertIn("Contoso_auto_approve_days_late", self.rendered_log(app))
+
+    async def test_completed_demo_scrolls_output_back_to_top(self) -> None:
+        app = AnatomyShow(start_scene=2)
+
+        async with app.run_test(size=(80, 20)) as pilot:
+            await app.action_run_demo()
+            await pilot.pause()
+
+            log = app.query_one("#console", RichLog)
+            self.assertGreater(log.max_scroll_y, 0)
+            self.assertEqual(log.scroll_y, 0)
 
     async def test_stage_safe_reflex_arc_runs_inside_show(self) -> None:
         app = AnatomyShow(start_scene=15)
