@@ -59,7 +59,7 @@ async def run(
     return RunReport(
         organ="instructions",
         status=status,
-        firing=["Instructions", "Model"],
+        firing=["Instructions"],
         output=output,
         payoff=[
             "The application team supplied the three profiles from separate instruction files.",

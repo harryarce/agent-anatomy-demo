@@ -4,12 +4,30 @@ import json
 from pathlib import Path
 from typing import Any
 
-from agent_framework import Agent, tool
+from agent_framework import (
+    Agent,
+    AgentMiddleware,
+    ContextProvider,
+    FileCheckpointStorage,
+    FunctionTool,
+    MiddlewareTypes,
+    Workflow,
+    WorkflowBuilder,
+    tool,
+)
+from agent_framework.observability import configure_otel_providers
 from agent_framework.foundry import FoundryChatClient
 from azure.identity.aio import DefaultAzureCredential
 
 
-def build_agent(client: Any) -> Agent:
+def build_model_agent(client: Any) -> Agent:
+    return Agent(
+        client=client,
+        name="refund-agent",
+    )
+
+
+def add_instructions(client: Any) -> Agent:
     return Agent(
         client=client,
         name="refund-agent",
@@ -26,7 +44,7 @@ async def handle_business_event(agent: Agent, event: dict[str, Any]) -> str:
     return str(response)
 
 
-def add_knowledge(client: Any, policy_provider: Any) -> Agent:
+def add_knowledge(client: Any, policy_provider: ContextProvider) -> Agent:
     return Agent(
         client=client,
         instructions="Cite the approved policy passage used in the answer.",
@@ -34,7 +52,7 @@ def add_knowledge(client: Any, policy_provider: Any) -> Agent:
     )
 
 
-def make_order_lookup(order_repository: Any) -> Any:
+def make_order_lookup(order_repository: Any) -> FunctionTool:
     @tool(
         name="lookup_order",
         description="Return verified status and delay details for an order ID.",
@@ -50,7 +68,7 @@ def add_tools(client: Any, order_repository: Any) -> Agent:
     return Agent(client=client, tools=[make_order_lookup(order_repository)])
 
 
-def add_memory(client: Any, customer_memory: Any) -> Agent:
+def add_memory(client: Any, customer_memory: ContextProvider) -> Agent:
     return Agent(
         client=client,
         instructions="Use remembered preferences only for the current customer.",
@@ -58,7 +76,7 @@ def add_memory(client: Any, customer_memory: Any) -> Agent:
     )
 
 
-def add_guardrails(client: Any, safety_middleware: Any) -> Agent:
+def add_guardrails(client: Any, safety_middleware: AgentMiddleware) -> Agent:
     return Agent(
         client=client,
         instructions="Never reveal another customer's data.",
@@ -66,13 +84,15 @@ def add_guardrails(client: Any, safety_middleware: Any) -> Agent:
     )
 
 
-async def run_reviewed_workflow(
-    request: str, researcher: Agent, writer: Agent, reviewer: Agent
-) -> str:
-    evidence = await researcher.run(request)
-    draft = await writer.run(f"Draft from this evidence: {evidence}")
-    approved = await reviewer.run(f"Review and correct this draft: {draft}")
-    return str(approved)
+def build_reviewed_workflow(
+    researcher: Agent, writer: Agent, reviewer: Agent
+) -> Workflow:
+    return (
+        WorkflowBuilder(start_executor=researcher, output_from=[reviewer])
+        .add_edge(researcher, writer)
+        .add_edge(writer, reviewer)
+        .build()
+    )
 
 
 async def run_with_identity(endpoint: str, model: str, prompt: str) -> str:
@@ -86,15 +106,11 @@ async def run_with_identity(endpoint: str, model: str, prompt: str) -> str:
         return str(await agent.run(prompt))
 
 
-def add_observability(client: Any, telemetry_middleware: Any) -> Agent:
-    return Agent(
-        client=client,
-        middleware=[telemetry_middleware],
-        additional_properties={"service.name": "refund-agent"},
-    )
+def enable_observability() -> None:
+    configure_otel_providers(env_file_path=".env")
 
 
-def add_budget(client: Any, budget_middleware: Any) -> Agent:
+def add_budget(client: Any, budget_middleware: AgentMiddleware) -> Agent:
     return Agent(
         client=client,
         instructions="Stop when the run budget is exhausted.",
@@ -102,18 +118,28 @@ def add_budget(client: Any, budget_middleware: Any) -> Agent:
     )
 
 
-def save_checkpoint(path: Path, completed_steps: set[str]) -> None:
-    state = {"completed_steps": sorted(completed_steps)}
-    path.write_text(json.dumps(state), encoding="utf-8")
+def build_checkpointed_workflow(
+    researcher: Agent, writer: Agent, reviewer: Agent, path: Path
+) -> Workflow:
+    storage = FileCheckpointStorage(path)
+    return (
+        WorkflowBuilder(
+            start_executor=researcher,
+            output_from=[reviewer],
+            checkpoint_storage=storage,
+        )
+        .add_edge(researcher, writer)
+        .add_edge(writer, reviewer)
+        .build()
+    )
 
 
-def unfinished_steps(path: Path, all_steps: list[str]) -> list[str]:
-    state = json.loads(path.read_text(encoding="utf-8"))
-    completed = set(state["completed_steps"])
-    return [step for step in all_steps if step not in completed]
+async def resume_workflow(workflow: Workflow, checkpoint_id: str) -> str:
+    result = await workflow.run(checkpoint_id=checkpoint_id)
+    return str(result.get_outputs()[-1])
 
 
-def add_skill(client: Any, triage_skill: Any) -> Agent:
+def add_skill(client: Any, triage_skill: FunctionTool) -> Agent:
     return Agent(
         client=client,
         instructions="Select a skill only when its description matches the task.",
@@ -129,9 +155,9 @@ def promote_instruction(candidate: str, evaluator: Any) -> str:
 
 def compose_agent(
     client: Any,
-    tools: list[Any],
-    providers: list[Any],
-    middleware: list[Any],
+    tools: list[FunctionTool],
+    providers: list[ContextProvider],
+    middleware: list[MiddlewareTypes],
 ) -> Agent:
     return Agent(
         client=client,
@@ -142,7 +168,7 @@ def compose_agent(
     )
 
 
-def add_planning(client: Any, goal_decomposer: Any) -> Agent:
+def add_planning(client: Any, goal_decomposer: FunctionTool) -> Agent:
     return Agent(
         client=client,
         instructions=(
@@ -153,7 +179,11 @@ def add_planning(client: Any, goal_decomposer: Any) -> Agent:
     )
 
 
-def add_beliefs(client: Any, belief_provider: Any, update_belief: Any) -> Agent:
+def add_beliefs(
+    client: Any,
+    belief_provider: ContextProvider,
+    update_belief: FunctionTool,
+) -> Agent:
     return Agent(
         client=client,
         instructions=(

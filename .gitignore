@@ -5,6 +5,7 @@ __pycache__/
 
 # Demo state written while organs run
 .anatomy-*.json
+.anatomy-errors.log
 
 # Reflex Arc: keep the seeded trigger, ignore anything dropped or produced on stage
 onedrive/*.*

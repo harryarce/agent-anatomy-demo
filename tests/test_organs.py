@@ -6,7 +6,7 @@ import io
 import json
 import unittest
 from argparse import Namespace
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 from pathlib import Path
 
 from rich.console import Console
@@ -130,10 +130,33 @@ class OrganMetadataTests(unittest.TestCase):
         self.assertEqual(report.organ, "model")
         self.assertTrue(report.output)
 
+    def test_model_defaults_to_an_explicit_local_baseline(self) -> None:
+        module = importlib.import_module("anatomy.organs.o02_model")
+        with patch.object(module, "run_live", AsyncMock()) as run_live:
+            report = asyncio.run(
+                module.run(
+                    question="q",
+                    replay=False,
+                    record=False,
+                    trace=False,
+                    stage=False,
+                    autopsy="",
+                    beat=None,
+                    kill=False,
+                    resume=False,
+                    tool_search=False,
+                )
+            )
+
+        run_live.assert_not_awaited()
+        self.assertEqual(report.source, "local deterministic model baseline")
+        self.assertIn("LOCAL DETERMINISTIC", report.labels)
+
     def test_autopsy_runs_intact_and_ablated_variants(self) -> None:
         args = Namespace(
             reset=True,
             replay=False,
+            remote=False,
             record=False,
             trace=False,
             stage=False,
@@ -155,11 +178,137 @@ class OrganMetadataTests(unittest.TestCase):
                 landing_line="done",
             )
 
-        with patch.object(runner, "_import_runner", return_value=fake_run):
+        with (
+            patch.object(runner, "_import_runner", return_value=fake_run),
+            patch.object(runner, "enhance_report_with_llm", AsyncMock(side_effect=lambda report, **_: report)),
+        ):
             status = asyncio.run(runner._run_one("observability", args, beat=8))
 
         self.assertEqual(status, 0)
         self.assertEqual(calls, ["", "knowledge"])
+
+    def test_local_run_does_not_call_llm(self) -> None:
+        args = Namespace(
+            reset=True,
+            replay=False,
+            remote=False,
+            record=False,
+            trace=False,
+            stage=False,
+            autopsy="",
+            kill=False,
+            resume=False,
+            tool_search=False,
+            present=False,
+        )
+        report = RunReport("knowledge", "ok", ["Knowledge"], ["Section 4.2"], [], "done")
+        enhance = AsyncMock(return_value=report)
+
+        with (
+            patch.object(runner, "_import_runner", return_value=AsyncMock(return_value=report)),
+            patch.object(runner, "enhance_report_with_llm", enhance),
+            patch.object(runner, "save_state"),
+        ):
+            status = asyncio.run(runner._run_one("knowledge", args))
+
+        self.assertEqual(status, 0)
+        enhance.assert_not_awaited()
+
+    def test_remote_run_enhances_deterministic_evidence_with_llm(self) -> None:
+        args = Namespace(
+            reset=True,
+            replay=False,
+            remote=True,
+            record=False,
+            trace=False,
+            stage=False,
+            autopsy="",
+            kill=False,
+            resume=False,
+            tool_search=False,
+            present=False,
+        )
+        report = RunReport("knowledge", "ok", ["Knowledge"], ["Section 4.2"], [], "done")
+        enhance = AsyncMock(return_value=report)
+
+        with (
+            patch.object(runner, "_import_runner", return_value=AsyncMock(return_value=report)),
+            patch.object(runner, "enhance_report_with_llm", enhance),
+            patch.object(runner, "save_state"),
+        ):
+            status = asyncio.run(runner._run_one("knowledge", args))
+
+        self.assertEqual(status, 0)
+        enhance.assert_awaited_once_with(report, question=runner.QUESTION, trace=False)
+
+    def test_replay_run_does_not_call_llm(self) -> None:
+        args = Namespace(
+            reset=True,
+            replay=True,
+            remote=False,
+            record=False,
+            trace=False,
+            stage=True,
+            autopsy="",
+            kill=False,
+            resume=False,
+            tool_search=False,
+            present=False,
+        )
+        report = RunReport("knowledge", "ok", ["Knowledge"], ["Section 4.2"], [], "done")
+        enhance = AsyncMock()
+
+        with (
+            patch.object(runner, "_import_runner", return_value=AsyncMock(return_value=report)),
+            patch.object(runner, "enhance_report_with_llm", enhance),
+            patch.object(runner, "save_state"),
+        ):
+            status = asyncio.run(runner._run_one("knowledge", args))
+
+        self.assertEqual(status, 0)
+        enhance.assert_not_awaited()
+
+    def test_stage_prose_is_not_hard_wrapped_before_show_renders_it(self) -> None:
+        args = Namespace(
+            reset=True,
+            replay=True,
+            remote=False,
+            record=False,
+            trace=False,
+            stage=True,
+            autopsy="",
+            kill=False,
+            resume=False,
+            tool_search=False,
+            present=False,
+        )
+        output = io.StringIO()
+        narrow_console = Console(width=40, color_system=None, file=output)
+
+        with patch.object(runner, "console", narrow_console), patch.object(runner, "save_state"):
+            status = asyncio.run(runner._run_one("instructions", args))
+
+        rendered = output.getvalue()
+        self.assertEqual(status, 0)
+        self.assertIn(
+            "[AI / MODEL]  Ada follows 'hostile reviewer': Current evidence is insufficient. Any confident refund claim is a process defect.",
+            rendered,
+        )
+        self.assertIn(
+            "[SYSTEM]  Demo setup: intentionally fabricated failure example for Knowledge next: 'Section 4.2 guarantees full refunds for any delay.'",
+            rendered,
+        )
+
+    def test_llm_failure_retains_deterministic_evidence(self) -> None:
+        from anatomy.llm import enhance_report_with_llm
+
+        report = RunReport("tools", "ok", ["Tools"], ["SQLite lookup: order 4471"], [], "done")
+        with patch("anatomy.llm.grounded_synthesis", AsyncMock(side_effect=RuntimeError("offline"))):
+            enhanced = asyncio.run(enhance_report_with_llm(report, question="q", trace=False))
+
+        self.assertEqual(enhanced.status, "ok")
+        self.assertEqual(enhanced.output[0], "SQLite lookup: order 4471")
+        self.assertIn("DETERMINISTIC FALLBACK", enhanced.labels)
 
 
 class LocalScenarioDataTests(unittest.TestCase):

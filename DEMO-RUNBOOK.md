@@ -8,11 +8,11 @@ For the fullscreen show controls, 45-minute route, and presenter recovery flow, 
 
 | Mode | Use it when | Network | Command pattern |
 |---|---|---|---|
-| Replay | Presenting on stage or testing the complete narrative | Not required | `python -m anatomy ... --replay` |
-| Local | Demonstrating SQLite, files, checkpoints, budgets, or other local behavior | Not required | `python -m anatomy ...` |
-| Live Foundry | Demonstrating the deployed model | Required | `python -m anatomy demo model` |
+| Local deterministic (default) | Presenting fresh, fast, inspectable organ evidence | Not required | `python -m anatomy ...` |
+| Remote LLM | Demonstrating the deployed model or grounded synthesis | Required | `python -m anatomy ... --remote` |
+| Replay | Recovering with a committed, frozen transcript | Not required | `python -m anatomy ... --replay` |
 
-Replay mode reads committed JSON transcripts from `replays/`. Local mode executes real local mechanisms. Only the Model organ currently makes a live Foundry inference call. Features labeled `LOCAL IMPLEMENTATION` or `SIMULATED` are described in `KNOWN-GAPS.md`.
+Local deterministic mode executes each organ's real local mechanism and is the default. The Model scene uses a clearly labeled deterministic baseline that exposes why Knowledge and Tools are needed. Remote mode adds Foundry: the Model organ invokes the deployment directly, while other organs ask it to synthesize only from supplied evidence. If inference fails, deterministic evidence remains available and is labeled `DETERMINISTIC FALLBACK`. Replay mode reads committed JSON transcripts from `replays/`. Features labeled `LOCAL IMPLEMENTATION` or `SIMULATED` are described in `KNOWN-GAPS.md`.
 
 All modes render evidence as an actor-attributed story. `USER` opens the scene; `AI / MODEL`, `TOOL`, `AGENT`, `ORGAN`, or `SYSTEM` owns each visible action; and `NARRATOR` states the takeaway. This format is shared by the CLI, fullscreen show, and autopsy comparison.
 
@@ -59,9 +59,9 @@ python scripts/setup_data.py
 
 This creates the policy documents, SQLite order database, CRM records, and learning tickets. The data is synthetic. Order `4471` belongs to Contoso and was shipped nine days late.
 
-## 3. Configure Live Foundry Access
+## 3. Configure Optional Remote Foundry Access
 
-Replay and local demos do not require Azure authentication. For the live Model demo:
+Default local and replay modes do not require Azure authentication. Remote mode requires the signed-in identity to have the least-privilege **Foundry User** role at the Foundry account or project scope:
 
 ```powershell
 az login
@@ -71,7 +71,7 @@ $env:FOUNDRY_MODEL = "<deployment-name>"
 
 The application uses `AzureCliCredential`, so the active `az login` identity is used. No API key is needed or stored.
 
-The `.env.example` file documents the variable names, but the runner does not automatically load `.env`. Set the variables in the current shell as shown above.
+The runner prefers values from a gitignored `.env`, then falls back to `.env.example`. Variables set in the current shell take precedence.
 
 Application Insights is optional. To enable its preflight check in a configured environment:
 
@@ -112,30 +112,32 @@ Launch the fullscreen terminal show:
 python -m anatomy show
 ```
 
-This is the primary presentation path. It opens in stage-safe mode and keeps one scene on screen at a time.
+This is the primary presentation path. It opens in local deterministic mode and keeps one scene on screen at a time.
 
 | Key | Stage action |
 |---|---|
 | `Left` / `Right` | Move between scenes |
 | `Space` | Run the current scene's evidence |
-| `R` | Switch between stage-safe and live/local execution |
+| `C` | Show, advance, or hide the inline code exhibit |
+| `X` | Expand the visible code exhibit, or collapse the overlay |
+| `R` | Switch between local deterministic and remote LLM execution |
 | `Home` / `End` | Jump to the opening or resources |
 | `Esc` | Cancel the active command without starting a fallback |
 | `Q` | Exit the show |
 
-Use the live Foundry path when preflight is green:
+Use the remote Foundry path when preflight is green and model latency fits the presentation:
 
 ```powershell
-python -m anatomy show --live
+python -m anatomy show --remote
 ```
 
 Resume at the Spine climax during rehearsal or recovery:
 
 ```powershell
-python -m anatomy show --from 13
+python -m anatomy show --from 14
 ```
 
-Scene 13 prepares the deterministic kill automatically if its checkpoint is absent. Live command failures fall back to the scene's committed evidence; the intentional Spine exit code `1` is treated as expected proof.
+Scene 14 prepares the deterministic kill automatically if its checkpoint is absent. Local command failures fall back to the scene's committed evidence; the intentional Spine exit code `1` is treated as expected proof.
 
 Universal scrolling fallback:
 
@@ -151,7 +153,7 @@ Presenter mode uses projection-width panels and adds five teaching cues to every
 4. **Watch for** tells the room which visible proof matters.
 5. **The difference** and **Say this** close with a before/after contrast and a memorable speaker line.
 
-It performs no model inference and ends with Beliefs showing how verified state changes the next decision.
+The replay command performs no model inference and ends with Beliefs showing how verified state changes the next decision.
 
 To resume at a later beat:
 
@@ -260,13 +262,13 @@ Offline baseline:
 python -m anatomy beat 0 --replay --reset
 ```
 
-Live model only:
+Remote model only:
 
 ```powershell
-python -m anatomy demo model --reset
+python -m anatomy demo model --remote --reset
 ```
 
-The live command should say `live Azure deployment gpt-5.6-terra`. If Foundry is unavailable, the Model organ prints a labeled local fallback and exits nonzero; use `--replay` for the stage-safe version.
+The remote command should say `live Azure deployment gpt-5.6-terra`. Without `--remote`, the Model organ returns its fast, labeled local deterministic baseline. If Foundry is unavailable during a remote run, the organ prints a labeled deterministic fallback; use `--replay` when a frozen transcript is preferable.
 
 Run Instructions independently:
 
@@ -508,7 +510,7 @@ py -3.11 -m venv .venv
 
 The compatible exact pair is `agent-framework-foundry==1.11.0` and `azure-ai-projects==2.3.0`.
 
-### Live Model falls back or exits nonzero
+### Remote Model falls back or exits nonzero
 
 Check the active identity and variables:
 
@@ -546,7 +548,7 @@ $OutputEncoding = [System.Text.UTF8Encoding]::new()
 1. Activate `.venv`.
 2. Run tests and preflight.
 3. Confirm `python -m anatomy demo model --replay` succeeds.
-4. Confirm live Model access if it will be used.
+4. Confirm remote Model access if it will be used.
 5. Reset transient state.
 6. Rehearse Spine kill/resume once.
 7. Confirm `onedrive/escalation-4471.csv` exists.

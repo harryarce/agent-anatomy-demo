@@ -1,12 +1,13 @@
 # Demo Script
 
-For the full audience-facing narrative, run `python -m anatomy show`. The fullscreen terminal deck opens with Harry Arce's introduction, starts with the raw Model and then adds Instructions, builds evidence and controls one organ at a time, then pays off with Reflex Arc, Planning, and Beliefs before closing on the complete anatomy and verified public resources. Press `R` for live/local execution. Keep `python -m anatomy present --replay --reset` ready as the scrolling fallback.
+For the full audience-facing narrative, run `python -m anatomy show`. The fullscreen terminal deck opens with Harry Arce's introduction, starts with the raw Model and then adds Instructions, builds evidence and controls one organ at a time, then pays off with Reflex Arc, Planning, and Beliefs before closing on the complete anatomy and verified public resources. It defaults to fast local deterministic evidence; press `R` only when you want the actual remote Foundry LLM. Keep `python -m anatomy present --replay --reset` ready as the scrolling fallback.
 
 Use [DEMO-SHOW.md](DEMO-SHOW.md) for setup, controls, the recommended 45-minute route, and recovery. The table below remains the command-level speaking reference.
 
 | Beat | Command | Before line | Audience sees | Landing line | Target | Fallback |
 |---|---|---|---|---|---|---|
-| 0 | `python -m anatomy beat 0 --replay --present --reset` | "Start with the raw model." | Raw answer first, then three instruction variants | "The model supplies intelligence. Instructions give that intelligence a job." | 90s | `python -m anatomy demo model --replay --present` |
+| 0A | `python -m anatomy demo model --replay --present --reset` | "First, give Ada a brain." | Model-only answer with no company evidence attached | "The model creates possibility. It does not create reliability." | 45s | Same command without `--present` |
+| 0B | `python -m anatomy demo instructions --replay --present` | "Now give that intelligence a job." | Three instruction profiles change behavior | "The model supplies intelligence. Instructions give that intelligence a job." | 45s | Same command without `--present` |
 | 1 | `python -m anatomy beat 1 --replay --present` | "Now we demand evidence." | Section 4.2 citation from local policy | "Grounding replaced confidence theater with verifiable evidence." | 60s | `python -m anatomy demo knowledge --replay --present` |
 | 2 | `python -m anatomy beat 2 --replay --present` | "Can she verify order 4471?" | Toolbox tools + SQLite order lookup | "Tools turned a guess into a lookup." | 60s | `python -m anatomy demo tools --replay --present` |
 | 3 | `python -m anatomy beat 3 --replay --present` | "New need, no code edit." | Added tool appears in discovered list | "Capability changed by config, not source edits." | 45s | `python -m anatomy tools --replay --resume --present` |

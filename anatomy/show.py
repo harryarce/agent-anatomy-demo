@@ -4,19 +4,24 @@ import asyncio
 import os
 import sys
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from importlib import metadata
 from pathlib import Path
 
+import qrcode
 from rich.syntax import Syntax
 from rich.text import Text
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
+from textual.screen import ModalScreen
 from textual.widgets import Footer, RichLog, Static
 
 from anatomy.runner import ORGANS as REGISTERED_ORGANS
 
 ROOT = Path(__file__).resolve().parents[1]
+ERROR_LOG = ROOT / ".anatomy-errors.log"
+REPOSITORY_URL = "https://github.com/harryarce/agent-anatomy-demo"
 
 
 @dataclass(frozen=True, slots=True)
@@ -79,11 +84,33 @@ def stack_report() -> list[tuple[str, str]]:
     return rows
 
 
+def repository_qr_text() -> Text:
+    qr = qrcode.QRCode(
+        version=None,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=1,
+        border=4,
+    )
+    qr.add_data(REPOSITORY_URL)
+    qr.make(fit=True)
+    matrix = qr.get_matrix()
+
+    text = Text("SCAN TO OPEN REPO\n", style="bold black on white", justify="center")
+    for row_index in range(0, len(matrix), 2):
+        top = matrix[row_index]
+        bottom = matrix[row_index + 1] if row_index + 1 < len(matrix) else [False] * len(top)
+        for top_dark, bottom_dark in zip(top, bottom):
+            block = "█" if top_dark and bottom_dark else "▀" if top_dark else "▄" if bottom_dark else " "
+            text.append(block, style="black on white")
+        text.append("\n", style="black on white")
+    return text
+
+
 def _exhibit_root(exhibit: CodeExhibit) -> Path:
     return ROOT
 
 
-def load_exhibit(exhibit: CodeExhibit) -> tuple[str, int, int]:
+def load_exhibit(exhibit: CodeExhibit, *, expanded: bool = False) -> tuple[str, int, int]:
     """Return the snippet, its first line number, and the line the anchor sits on."""
     lines = (_exhibit_root(exhibit) / exhibit.path).read_text(encoding="utf-8").splitlines()
     scope = 0
@@ -96,8 +123,10 @@ def load_exhibit(exhibit: CodeExhibit) -> tuple[str, int, int]:
     if not hits or (exhibit.within is None and len(hits) != 1):
         raise ValueError(f"{exhibit.path}: anchor resolved to {len(hits)} lines, expected exactly one")
     focus = hits[0]
-    start = max(0, focus - exhibit.before)
-    end = min(len(lines), focus + exhibit.after + 1)
+    before = max(exhibit.before, 12) if expanded else exhibit.before
+    after = max(exhibit.after, 28) if expanded else exhibit.after
+    start = max(0, focus - before)
+    end = min(len(lines), focus + after + 1)
     return "\n".join(lines[start:end]), start + 1, focus + 1
 
 
@@ -113,8 +142,35 @@ class Scene:
     safe_steps: tuple[DemoStep, ...] = ()
     live_steps: tuple[DemoStep, ...] = ()
 
-    def steps_for(self, live: bool) -> tuple[DemoStep, ...]:
-        return self.live_steps if live and self.live_steps else self.safe_steps
+    def local_steps(self) -> tuple[DemoStep, ...]:
+        return self.live_steps or self.safe_steps
+
+
+@dataclass(frozen=True, slots=True)
+class OrganHighlight:
+    role: str
+    use_it_to: str
+    enhancement: str
+
+
+ORGAN_HIGHLIGHTS = {
+    1: OrganHighlight("THE JOB DESCRIPTION", "Define role, priorities, tone, and boundaries.", "Consistent behavior without retraining the model."),
+    2: OrganHighlight("THE BRAIN", "Interpret language, reason over ambiguity, and draft responses.", "General intelligence for work that rigid code cannot anticipate."),
+    3: OrganHighlight("THE EVIDENCE", "Retrieve approved facts and cite their sources.", "Grounded answers that people can verify."),
+    4: OrganHighlight("THE HANDS", "Query systems and perform governed actions.", "The ability to inspect and change the world, not merely discuss it."),
+    5: OrganHighlight("EXPERTISE ON DEMAND", "Load specialist guidance only when relevant.", "Reusable expertise without bloating every prompt."),
+    6: OrganHighlight("CONTINUITY", "Recall relevant user and task context across sessions.", "Personalization and work that survives a new conversation."),
+    7: OrganHighlight("THE BOUNDARIES", "Enforce safety, privacy, and business policy.", "Controls that make growing autonomy governable."),
+    8: OrganHighlight("THE TEAM AND PROCESS", "Coordinate steps, specialists, handoffs, and review.", "Repeatable workflows with visible responsibility."),
+    9: OrganHighlight("THE BADGE AND KEYS", "Identify the actor and enforce least privilege.", "Accountability and controlled access to business systems."),
+    10: OrganHighlight("THE FLIGHT RECORDER", "Trace model calls, tools, latency, tokens, and failures.", "A system operators can explain, debug, and improve."),
+    11: OrganHighlight("THE WAKE-UP SIGNAL", "Start governed work from a file, message, or event.", "Proactive behavior without waiting for a chat prompt."),
+    12: OrganHighlight("THE ROADMAP", "Break a goal into ordered, measurable sub-goals.", "An inspectable plan before autonomous execution."),
+    13: OrganHighlight("THE DURABLE BACKBONE", "Checkpoint progress and resume unfinished work.", "Recovery without repeating completed side effects."),
+    14: OrganHighlight("THE BUDGET", "Limit tokens, time, tool calls, and spend.", "Economically predictable autonomy with a hard stop."),
+    15: OrganHighlight("THE WORLD MODEL", "Store evidence-backed facts that affect future decisions.", "Explicit, auditable state instead of hidden assumptions."),
+    16: OrganHighlight("THE IMPROVEMENT LOOP", "Turn failure evidence into evaluated changes.", "Measured improvement of the agent scaffold under governance."),
+}
 
 
 def step(label: str, *args: str, cleanup: tuple[str, ...] = ()) -> DemoStep:
@@ -147,16 +203,27 @@ SCENES = (
     Scene(
         2,
         "ACT I | A BRAIN IS NOT AN AGENT",
-        "First, the brain. Then give it a job.",
-        "Hold the question constant. Start with the raw model, then add instructions. Behavior changes immediately, but evidence is still missing.",
-        "The raw model establishes the baseline; three instruction sets expose the first control surface.",
-        "The model supplies intelligence. Instructions give that intelligence a job.",
-        (2, 1),
-        (step("Run the raw model, then instructions", "beat", "0", "--replay", "--stage", "--reset"),),
-        (step("Call the live model, then instructions", "beat", "0", "--stage", "--reset"),),
+        "First, give Ada a brain.",
+        "The raw model can interpret an ambiguous refund request and draft a plausible answer, but it has no job definition or verified business evidence.",
+        "Watch fluent reasoning appear before any policy, order data, or operating instructions are attached.",
+        "The model creates possibility. It does not create reliability.",
+        (2,),
+        (step("Run the raw model", "demo", "model", "--replay", "--stage", "--reset"),),
+        (step("Call the live model", "demo", "model", "--stage", "--reset"),),
     ),
     Scene(
         3,
+        "ACT I | INSTRUCTIONS",
+        "Now give that intelligence a job.",
+        "Hold the question and model constant while explicit roles, priorities, and boundaries change Ada's behavior.",
+        "Three instruction profiles produce three distinct behaviors without retraining the model.",
+        "The model supplies intelligence. Instructions give that intelligence a job.",
+        (1,),
+        (step("Apply explicit instructions", "demo", "instructions", "--replay", "--stage"),),
+        (step("Apply explicit instructions", "demo", "instructions", "--stage"),),
+    ),
+    Scene(
+        4,
         "ACT I | KNOWLEDGE",
         "Confidence is not evidence.",
         "Ada grounds the refund answer in the actual policy instead of inventing a plausible rule.",
@@ -167,7 +234,7 @@ SCENES = (
         (step("Retrieve the local policy evidence", "beat", "1", "--stage"),),
     ),
     Scene(
-        4,
+        5,
         "ACT II | TOOLS",
         "A fluent answer cannot query an order database.",
         "Ada crosses from talking about the world to inspecting a system of record.",
@@ -178,7 +245,7 @@ SCENES = (
         (step("Query the local order database", "beat", "2", "--stage"),),
     ),
     Scene(
-        5,
+        6,
         "ACT II | TOOL DISCOVERY",
         "New capability. No Python edit.",
         "A toolbox configuration advertises one more business capability, and discovery finds it on demand.",
@@ -189,7 +256,7 @@ SCENES = (
         (step("Discover the configured tool", "tools", "--tool-search", "--stage"),),
     ),
     Scene(
-        6,
+        7,
         "ACT II | MEMORY",
         "A new thread does not have to mean amnesia.",
         "Ada carries the relevant customer preference across distinct sessions without asking for it again.",
@@ -200,7 +267,7 @@ SCENES = (
         (step("Exercise local durable memory", "beat", "4", "--stage"),),
     ),
     Scene(
-        7,
+        8,
         "ACT III | GUARDRAILS",
         "More capability requires stronger boundaries.",
         "Ada faces a legitimate request, a cross-customer data leak, and a prompt injection.",
@@ -211,7 +278,7 @@ SCENES = (
         (step("Run the local guardrail checks", "beat", "5", "--stage"),),
     ),
     Scene(
-        8,
+        9,
         "ACT III | ORCHESTRATION",
         "One opaque prompt becomes an auditable workflow.",
         "Research, writing, and review become explicit steps with visible handoffs.",
@@ -222,7 +289,7 @@ SCENES = (
         (step("Run the local workflow", "beat", "6", "--stage"),),
     ),
     Scene(
-        9,
+        10,
         "ACT III | IDENTITY",
         "Who acted, and what were they allowed to do?",
         "This local simulation binds Ada to explicit claims and a least-privilege policy. Production uses managed identity and RBAC.",
@@ -233,7 +300,7 @@ SCENES = (
         (step("Run the local RBAC simulation", "beat", "7", "--stage"),),
     ),
     Scene(
-        10,
+        11,
         "ACT III | OBSERVABILITY",
         "At 3:00 a.m., the final answer is not enough.",
         "Ada exposes the path from request to policy lookup, order lookup, and drafted decision.",
@@ -244,7 +311,7 @@ SCENES = (
         (step("Emit the local trace", "beat", "8", "--trace", "--stage"),),
     ),
     Scene(
-        11,
+        12,
         "ACT IV | METABOLISM",
         "Autonomy gets a hard budget.",
         "Charges are accepted atomically until the next operation would cross Ada's spend cap.",
@@ -255,7 +322,7 @@ SCENES = (
         (step("Exercise the local spend cap", "beat", "9", "--stage"),),
     ),
     Scene(
-        12,
+        13,
         "ACT IV | SPINE: KILL",
         "Now we kill the process.",
         "Ada completes two consequential steps, checkpoints them, and exits in the middle of the job.",
@@ -265,7 +332,7 @@ SCENES = (
         (SPINE_KILL_STEP,),
     ),
     Scene(
-        13,
+        14,
         "ACT IV | SPINE: RESUME",
         "Completed work does not run twice.",
         "Restart Ada from the checkpoint left by the previous scene.",
@@ -275,7 +342,7 @@ SCENES = (
         (SPINE_RESUME_STEP,),
     ),
     Scene(
-        14,
+        15,
         "ACT V | SKILLS + LEARNING",
         "Expertise loads on demand. Failure improves the scaffold.",
         "Ada selects one modular skill, then a critic loop turns measured failures into better instructions.",
@@ -286,7 +353,7 @@ SCENES = (
         (step("Run the local skill and critic loop", "beat", "11", "--stage"),),
     ),
     Scene(
-        15,
+        16,
         "FINAL ACT | REFLEX ARC",
         "Nobody typed anything.",
         "An escalation file lands. Ada is dormant. The event itself wakes her, and she acts.",
@@ -297,7 +364,7 @@ SCENES = (
         (step("Trigger the autonomous wake-up", "beat", "12", "--stage", cleanup=("onedrive/result.txt",)),),
     ),
     Scene(
-        16,
+        17,
         "FINAL ACT | PLANNING",
         "Waking up is not the same as knowing what to do.",
         "Ada turns the escalation into four ordered, inspectable sub-goals before execution.",
@@ -308,7 +375,7 @@ SCENES = (
         (step("Build the local execution plan", "beat", "13", "--stage"),),
     ),
     Scene(
-        17,
+        18,
         "FINAL ACT | BELIEFS",
         "The next case should not start from zero.",
         "Ada records which verified facts changed and shows how that explicit state changes the next decision.",
@@ -319,7 +386,7 @@ SCENES = (
         (step("Persist the local belief update", "beat", "14", "--stage", cleanup=(".anatomy-beliefs.json",)),),
     ),
     Scene(
-        18,
+        19,
         "THE WHOLE SYSTEM",
         "Sixteen working organs. One dependable agent.",
         "Intelligence, evidence, action, continuity, control, recovery, economics, and improvement now form one system.",
@@ -328,10 +395,10 @@ SCENES = (
         tuple(range(1, 17)),
     ),
     Scene(
-        19,
+        20,
         "TAKE IT WITH YOU",
         "Build the next organ.",
-        "aka.ms/agent-framework  |  Agent Framework docs and samples\naka.ms/mcp              |  Microsoft's public MCP catalog\naka.ms/microsoftfoundry |  Microsoft Foundry Labs",
+        "aka.ms/agent-framework  |  Agent Framework docs and samples\naka.ms/mcp              |  Microsoft's public MCP catalog\naka.ms/microsoftfoundry |  Microsoft Foundry Labs\nhttps://github.com/harryarce/agent-anatomy-demo",
         "Start with one business failure. Add only the organs that make its outcome observable, constrained, and recoverable.",
         "Thank you. Questions are welcome.",
     ),
@@ -340,25 +407,41 @@ SCENES = (
 EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
     2: (
         CodeExhibit(
-            "Add the organs: model plus instructions",
+            "Add the organ: model client",
             "examples/organ_recipes.py",
-            "def build_agent(client: Any) -> Agent:",
+            "def build_model_agent(client: Any) -> Agent:",
             "python",
-            "Pass a model client and explicit operating instructions to the public Agent constructor.",
+            "Pass a model client to the public Agent constructor to supply the system's reasoning engine.",
             (
-                "The client supplies intelligence; instructions define the agent's job and boundaries.",
-                "Start here, then attach the remaining organs through public constructor parameters.",
+                "The client selects the deployed model and owns inference communication.",
+                "No business instructions, knowledge, or tools are attached yet.",
             ),
-            "Choose the model in the agent's model settings, then write its role, rules, tone, and response boundaries in Instructions.",
+            "Choose the model in the agent's model settings before adding instructions, knowledge, and tools.",
             before=0,
-            after=8,
+            after=4,
         ),
     ),
     3: (
         CodeExhibit(
+            "Add the organ: operating instructions",
+            "examples/organ_recipes.py",
+            "def add_instructions(client: Any) -> Agent:",
+            "python",
+            "Give the same model an explicit role, evidence standard, and response behavior.",
+            (
+                "The model client stays constant while instructions change behavior.",
+                "Instructions guide behavior; enforceable safety checks still belong in middleware.",
+            ),
+            "Write the agent's role, rules, tone, and response boundaries in Instructions.",
+            before=0,
+            after=9,
+        ),
+    ),
+    4: (
+        CodeExhibit(
             "Add the organ: grounded knowledge",
             "examples/organ_recipes.py",
-            "def add_knowledge(client: Any, policy_provider: Any) -> Agent:",
+            "def add_knowledge(client: Any, policy_provider: ContextProvider) -> Agent:",
             "python",
             "Attach a context provider that retrieves approved policy evidence before the model answers.",
             (
@@ -370,23 +453,23 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             after=5,
         ),
     ),
-    4: (
+    5: (
         CodeExhibit(
             "Add the organ: a governed business tool",
             "examples/organ_recipes.py",
-            "def make_order_lookup(order_repository: Any) -> Any:",
+            "def make_order_lookup(order_repository: Any) -> FunctionTool:",
             "python",
             "Decorate a normal function, describe it clearly, and attach it to the agent's tools list.",
             (
                 "The description tells the model when to call the tool.",
-                "Invocation limits constrain repeated calls; the function owns system access.",
+                "max_invocations limits this tool instance's lifetime; run options can impose per-request limits.",
             ),
             "Add a Tool using a connector, agent flow, REST API, custom connector, or MCP server; its name and description guide selection.",
             before=0,
             after=14,
         ),
     ),
-    5: (
+    6: (
         CodeExhibit(
             "Our toolbox: new capability declared in configuration",
             "toolbox.add-tool.yaml",
@@ -402,11 +485,11 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             after=2,
         ),
     ),
-    6: (
+    7: (
         CodeExhibit(
             "Add the organ: durable customer memory",
             "examples/organ_recipes.py",
-            "def add_memory(client: Any, customer_memory: Any) -> Agent:",
+            "def add_memory(client: Any, customer_memory: ContextProvider) -> Agent:",
             "python",
             "Attach a customer-scoped memory provider that can recall relevant facts on later runs.",
             (
@@ -418,11 +501,11 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             after=5,
         ),
     ),
-    7: (
+    8: (
         CodeExhibit(
             "Add the organ: guardrail middleware",
             "examples/organ_recipes.py",
-            "def add_guardrails(client: Any, safety_middleware: Any) -> Agent:",
+            "def add_guardrails(client: Any, safety_middleware: AgentMiddleware) -> Agent:",
             "python",
             "Attach safety middleware outside the prompt so it can block a run before a tool or model proceeds.",
             (
@@ -434,23 +517,23 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             after=5,
         ),
     ),
-    8: (
+    9: (
         CodeExhibit(
             "Add the organ: a reviewed multi-agent workflow",
             "examples/organ_recipes.py",
-            "async def run_reviewed_workflow(",
+            "def build_reviewed_workflow(",
             "python",
-            "Give research, drafting, and review to named agents with explicit handoffs.",
+            "Connect named agents with explicit edges using the public WorkflowBuilder API.",
             (
                 "Each boundary can be traced, tested, retried, or replaced independently.",
                 "Add conditional routing when the reviewer needs to reject a draft.",
             ),
-            "Use topics and agent flows for explicit steps, or connected agents when specialist agents should delegate work to one another.",
+            "Use topics or deterministic agent flows for explicit steps; use child or connected agents for specialist delegation.",
             before=0,
-            after=7,
+            after=8,
         ),
     ),
-    9: (
+    10: (
         CodeExhibit(
             "Add the organ: keyless Entra identity",
             "examples/organ_recipes.py",
@@ -466,27 +549,27 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             after=8,
         ),
     ),
-    10: (
+    11: (
         CodeExhibit(
-            "Add the organ: telemetry middleware",
+            "Add the organ: OpenTelemetry setup",
             "examples/organ_recipes.py",
-            "def add_observability(client: Any, telemetry_middleware: Any) -> Agent:",
+            "def enable_observability() -> None:",
             "python",
-            "Attach OpenTelemetry middleware once so every model and tool operation emits correlated evidence.",
+            "Configure the framework's OpenTelemetry providers once during application startup.",
             (
-                "Give the agent a stable service name for filtering and dashboards.",
-                "Export traces to Application Insights or any OpenTelemetry backend.",
+                "Agent Framework instruments agent, model, tool, and workflow operations.",
+                "Configure exporters through standard OpenTelemetry environment variables.",
             ),
             "Use the Analytics page for adoption and quality trends; connect Application Insights for detailed conversation and event telemetry.",
             before=0,
-            after=5,
+            after=1,
         ),
     ),
-    11: (
+    12: (
         CodeExhibit(
             "Add the organ: a hard run budget",
             "examples/organ_recipes.py",
-            "def add_budget(client: Any, budget_middleware: Any) -> Agent:",
+            "def add_budget(client: Any, budget_middleware: AgentMiddleware) -> Agent:",
             "python",
             "Attach middleware that checks token, cost, time, or step limits before allowing more work.",
             (
@@ -498,43 +581,43 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             after=5,
         ),
     ),
-    12: (
+    13: (
         CodeExhibit(
             "Add the organ: persist a checkpoint",
             "examples/organ_recipes.py",
-            "def save_checkpoint(path: Path, completed_steps: set[str]) -> None:",
+            "def build_checkpointed_workflow(",
             "python",
-            "Persist completed step identifiers immediately after each consequential action succeeds.",
+            "Provide FileCheckpointStorage when building a workflow to capture each superstep.",
             (
-                "Write the checkpoint before the next step begins.",
-                "Store operation IDs with side effects so retries remain idempotent.",
+                "Use file storage for local development and Cosmos storage for distributed production runs.",
+                "Framework checkpoints preserve executor state, pending messages, and shared state.",
             ),
-            "Use a cloud or agent flow for durable execution and persist business checkpoints and idempotency keys in Dataverse for consequential actions.",
+            "Use a deterministic agent flow for durable trigger/action execution; persist business checkpoints and idempotency keys in Dataverse.",
             before=0,
-            after=2,
-        ),
-    ),
-    13: (
-        CodeExhibit(
-            "Add the organ: resume only unfinished work",
-            "examples/organ_recipes.py",
-            "def unfinished_steps(path: Path, all_steps: list[str]) -> list[str]:",
-            "python",
-            "Load the checkpoint after restart and schedule only steps that have no completion record.",
-            (
-                "A retry must not repeat a refund, email, or other side effect.",
-                "Recorded completion state makes recovery deterministic.",
-            ),
-            "Cloud flow retry policies and run history handle transient failures; use Dataverse state and idempotent actions when a run must resume safely.",
-            before=0,
-            after=3,
+            after=13,
         ),
     ),
     14: (
         CodeExhibit(
+            "Add the organ: resume only unfinished work",
+            "examples/organ_recipes.py",
+            "async def resume_workflow(workflow: Workflow, checkpoint_id: str) -> str:",
+            "python",
+            "Resume the framework workflow by passing a stored checkpoint ID to run().",
+            (
+                "The workflow restores its captured state and pending messages.",
+                "Business side effects still need idempotency keys in the target system.",
+            ),
+            "Cloud flow retry policies and run history handle transient failures; use Dataverse state and idempotent actions when a run must resume safely.",
+            before=0,
+            after=2,
+        ),
+    ),
+    15: (
+        CodeExhibit(
             "Add the organ: modular skill selection",
             "examples/organ_recipes.py",
-            "def add_skill(client: Any, triage_skill: Any) -> Agent:",
+            "def add_skill(client: Any, triage_skill: FunctionTool) -> Agent:",
             "python",
             "Package specialist behavior behind a well-described tool and attach it only where needed.",
             (
@@ -560,7 +643,7 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             after=3,
         ),
     ),
-    15: (
+    16: (
         CodeExhibit(
             "Add the organ: wake the agent from an external event",
             "examples/organ_recipes.py",
@@ -576,11 +659,11 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             after=3,
         ),
     ),
-    16: (
+    17: (
         CodeExhibit(
             "Add the organ: decompose before acting",
             "examples/organ_recipes.py",
-            "def add_planning(client: Any, goal_decomposer: Any) -> Agent:",
+            "def add_planning(client: Any, goal_decomposer: FunctionTool) -> Agent:",
             "python",
             "Attach one clearly described planning tool and require an ordered plan before execution.",
             (
@@ -592,11 +675,11 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             after=9,
         ),
     ),
-    17: (
+    18: (
         CodeExhibit(
             "Add the organ: explicit world state",
             "examples/organ_recipes.py",
-            "def add_beliefs(client: Any, belief_provider: Any, update_belief: Any) -> Agent:",
+            "def add_beliefs(",
             "python",
             "Load verified world state as context and expose a governed tool for persisting updates.",
             (
@@ -605,10 +688,10 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             ),
             "Store governed state in Dataverse and retrieve or update it through authenticated actions or agent flows.",
             before=0,
-            after=10,
+            after=15,
         ),
     ),
-    18: (
+    19: (
         CodeExhibit(
             "Compose the anatomy through public attachment points",
             "examples/organ_recipes.py",
@@ -621,7 +704,7 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             ),
             "The agent canvas composes the same anatomy through Instructions, Knowledge, Tools, Topics, connected agents, authentication, and analytics.",
             before=0,
-            after=11,
+            after=13,
         ),
     ),
 }
@@ -720,6 +803,15 @@ def _section_rule(title: str, style: str) -> Text:
     return Text(f"\u258c {title}\n", style=f"bold {style}")
 
 
+def _append_error_log(command: tuple[str, ...], detail: str, output: str = "") -> None:
+    timestamp = datetime.now(timezone.utc).isoformat()
+    entry = [f"[{timestamp}] {' '.join(command)}", detail]
+    if output:
+        entry.extend(("--- captured output ---", output))
+    with ERROR_LOG.open("a", encoding="utf-8") as error_log:
+        error_log.write("\n".join(entry) + "\n\n")
+
+
 ADA_BANNER = (
     "┌                                                    ┐",
     "",
@@ -736,6 +828,100 @@ ANATOMY = tuple(
     (organ.number, organ.name.title(), organ.status == "ready")
     for organ in REGISTERED_ORGANS
 )
+
+
+def _write_exhibit(log: RichLog, exhibit: CodeExhibit, position: int, total: int, *, expanded: bool = False) -> None:
+    counter = f"  [{position + 1}/{total}]" if total > 1 else ""
+    heading = "EXPANDED CODE" if expanded else "CODE EXHIBIT"
+    log.write(Text(f"{heading}{counter}   {exhibit.title}", style="bold #F2CC60"))
+    log.write(Text(f"{exhibit.provenance}   ·   {exhibit.display_path}\n", style="#7FA6B8"))
+    try:
+        snippet, start_line, focus_line = load_exhibit(exhibit, expanded=expanded)
+    except (OSError, ValueError) as error:
+        log.write(Text(f"Exhibit unavailable: {error}", style="bold #FF4D6D"))
+        return
+    log.write(
+        Syntax(
+            snippet,
+            exhibit.language,
+            theme="monokai",
+            line_numbers=True,
+            start_line=start_line,
+            highlight_lines={focus_line},
+            word_wrap=True,
+        )
+    )
+    log.write(Text(f"\nWHAT IT DOES   {exhibit.mechanism}", style="#EAF4F4"))
+    for note in exhibit.read_this:
+        log.write(Text(f"WHY IT MATTERS {note}", style="#7EE787"))
+    if exhibit.copilot_studio:
+        log.write(Text(f"COPILOT STUDIO {exhibit.copilot_studio}", style="#50E6FF"))
+
+
+class CodeOverlay(ModalScreen[None]):
+    CSS = """
+    CodeOverlay {
+        align: center middle;
+        background: rgba(2, 6, 9, 0.88);
+    }
+
+    #code-overlay {
+        width: 96%;
+        height: 94%;
+        padding: 1;
+        background: #020609;
+        border: heavy #50E6FF;
+    }
+
+    #expanded-code {
+        height: 1fr;
+        scrollbar-color: #50E6FF;
+        scrollbar-background: #102532;
+    }
+
+    #expanded-controls {
+        height: 2;
+        padding: 0 1;
+        color: #9FB7C2;
+        background: #0C1C29;
+    }
+    """
+
+    BINDINGS = [
+        Binding("x", "collapse", "Collapse", priority=True),
+        Binding("escape", "collapse", "Collapse", priority=True),
+        Binding("pageup", "scroll_up", "Code up", priority=True),
+        Binding("pagedown", "scroll_down", "Code down", priority=True),
+    ]
+
+    def __init__(self, exhibit: CodeExhibit, position: int, total: int) -> None:
+        super().__init__()
+        self.exhibit = exhibit
+        self.position = position
+        self.total = total
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="code-overlay"):
+            yield RichLog(id="expanded-code", highlight=False, markup=False, wrap=True)
+            yield Static("X / Esc collapse   ·   Page Up / Page Down scroll", id="expanded-controls")
+
+    def on_mount(self) -> None:
+        _write_exhibit(
+            self.query_one("#expanded-code", RichLog),
+            self.exhibit,
+            self.position,
+            self.total,
+            expanded=True,
+        )
+
+    def action_collapse(self) -> None:
+        self.dismiss()
+
+    def action_scroll_up(self) -> None:
+        self.query_one("#expanded-code", RichLog).scroll_page_up()
+
+    def action_scroll_down(self) -> None:
+        self.query_one("#expanded-code", RichLog).scroll_page_down()
 
 
 class AnatomyShow(App[None]):
@@ -792,6 +978,16 @@ class AnatomyShow(App[None]):
         color: #D8E8EE;
     }
 
+    #organ-role {
+        height: auto;
+        min-height: 3;
+        padding: 0 1;
+        margin-bottom: 1;
+        background: #102532;
+        border-left: thick #F2CC60;
+        color: #EAF4F4;
+    }
+
     #proof {
         height: auto;
         min-height: 3;
@@ -809,6 +1005,19 @@ class AnatomyShow(App[None]):
         border: round #35637A;
         scrollbar-color: #50E6FF;
         scrollbar-background: #102532;
+    }
+
+    #repo-qr {
+        display: none;
+        dock: right;
+        width: 39;
+        min-width: 39;
+        height: auto;
+        padding: 0;
+        background: #FFFFFF;
+        color: #000000;
+        border: heavy #50E6FF;
+        text-align: center;
     }
 
     #landing {
@@ -839,7 +1048,8 @@ class AnatomyShow(App[None]):
         Binding("right", "next", "Next", priority=True),
         Binding("space", "run_demo", "Run demo", priority=True),
         Binding("c", "toggle_code", "Show / hide code", priority=True),
-        Binding("r", "toggle_mode", "Replay / live", priority=True),
+        Binding("x", "toggle_code_overlay", "Expand code", priority=True),
+        Binding("r", "toggle_mode", "Local / remote", priority=True),
         Binding("home", "first", "First", priority=True),
         Binding("end", "last", "Last", priority=True),
         Binding("pageup", "scroll_up", "Evidence up", priority=True),
@@ -848,10 +1058,10 @@ class AnatomyShow(App[None]):
         Binding("q", "quit", "Quit", priority=True),
     ]
 
-    def __init__(self, *, start_scene: int = 1, live: bool = False) -> None:
+    def __init__(self, *, start_scene: int = 1, remote: bool = False) -> None:
         super().__init__()
         self.scene_index = start_scene - 1
-        self.live = live
+        self.remote = remote
         self.running_demo = False
         self.exhibit_index: int | None = None
         self._cancel_requested = False
@@ -862,8 +1072,10 @@ class AnatomyShow(App[None]):
         with Horizontal(id="main"):
             yield Static(id="anatomy")
             with Vertical(id="stage"):
+                yield Static(id="repo-qr")
                 yield Static(id="eyebrow")
                 yield Static(id="scene-title")
+                yield Static(id="organ-role")
                 yield Static(id="message")
                 yield Static(id="proof")
                 yield RichLog(id="console", highlight=False, markup=False, wrap=True)
@@ -881,10 +1093,17 @@ class AnatomyShow(App[None]):
         )
         self.query_one("#eyebrow", Static).update(scene.chapter)
         self.query_one("#scene-title", Static).update(scene.title)
+        role = self.query_one("#organ-role", Static)
+        role_text = self._organ_highlight_text(scene)
+        role.display = role_text is not None
+        role.update(role_text or "")
         self.query_one("#message", Static).update(scene.message)
         self.query_one("#proof", Static).update(f"WATCH FOR  {scene.proof}")
         self.query_one("#landing", Static).update(scene.landing)
         self.query_one("#anatomy", Static).update(self._anatomy_text(scene))
+        qr_panel = self.query_one("#repo-qr", Static)
+        qr_panel.display = scene.number == len(SCENES)
+        qr_panel.update(repository_qr_text() if qr_panel.display else "")
 
         log = self.query_one("#console", RichLog)
         log.clear()
@@ -893,11 +1112,28 @@ class AnatomyShow(App[None]):
         elif scene.number == 1:
             log.write(self._ada_banner_text())
         elif scene.safe_steps:
-            mode = "LIVE / LOCAL" if self.live else "STAGE-SAFE"
+            mode = "REMOTE LLM" if self.remote else "LOCAL DETERMINISTIC"
             log.write(Text(f"READY  {mode}\n\nPress Space to run the evidence for this scene.", style="bold #50E6FF"))
         else:
             log.write(Text("PRESENTER MOMENT\n\nNo executable claim on this scene. Let the idea land.", style="#9FB7C2"))
         self._render_controls()
+
+    @staticmethod
+    def _organ_highlight_text(scene: Scene) -> Text | None:
+        if not scene.safe_steps or not scene.organs:
+            return None
+        text = Text()
+        for index, organ_number in enumerate(scene.organs):
+            highlight = ORGAN_HIGHLIGHTS[organ_number]
+            organ_name = next(name for number, name, _ in ANATOMY if number == organ_number)
+            if index:
+                text.append("\n")
+            text.append(f"{organ_name.upper()}  ·  {highlight.role}\n", style="bold #F2CC60")
+            text.append("USE IT TO  ", style="bold #50E6FF")
+            text.append(f"{highlight.use_it_to}\n")
+            text.append("ADDS TO THE AGENT  ", style="bold #7EE787")
+            text.append(highlight.enhancement)
+        return text
 
     def _ada_banner_text(self) -> Text:
         text = Text()
@@ -933,14 +1169,17 @@ class AnatomyShow(App[None]):
 
     def _render_controls(self) -> None:
         scene = SCENES[self.scene_index]
-        mode = "LIVE / LOCAL" if self.live else "STAGE-SAFE"
+        mode = "REMOTE LLM" if self.remote else "LOCAL DETERMINISTIC"
         if self.running_demo:
             status = "RUNNING  |  Esc cancels"
         elif scene.safe_steps:
             status = "Space runs evidence"
         else:
             status = "Presenter scene"
-        code = "C shows code" if EXHIBITS.get(scene.number) else "no code exhibit"
+        if self.exhibit_index is not None:
+            code = "C advances code  |  X expands"
+        else:
+            code = "C shows code" if EXHIBITS.get(scene.number) else "no code exhibit"
         self.query_one("#controls", Static).update(
             f"{mode}  |  {status}  |  {code}  |  R switches mode  |  Left/Right navigate"
         )
@@ -960,33 +1199,20 @@ class AnatomyShow(App[None]):
     def _render_exhibit(self, exhibit: CodeExhibit, position: int, total: int) -> None:
         log = self.query_one("#console", RichLog)
         log.clear()
-        counter = f"  [{position + 1}/{total}]" if total > 1 else ""
-        log.write(Text(f"CODE EXHIBIT{counter}   {exhibit.title}", style="bold #F2CC60"))
-        log.write(Text(f"{exhibit.provenance}   ·   {exhibit.display_path}\n", style="#7FA6B8"))
-        try:
-            snippet, start_line, focus_line = load_exhibit(exhibit)
-        except (OSError, ValueError) as error:
-            log.write(Text(f"Exhibit unavailable: {error}", style="bold #FF4D6D"))
-            return
-        log.write(
-            Syntax(
-                snippet,
-                exhibit.language,
-                theme="monokai",
-                line_numbers=True,
-                start_line=start_line,
-                highlight_lines={focus_line},
-                word_wrap=True,
-            )
-        )
-        log.write(Text(f"\nWHAT IT DOES   {exhibit.mechanism}", style="#EAF4F4"))
-        for note in exhibit.read_this:
-            log.write(Text(f"WHY IT MATTERS {note}", style="#7EE787"))
-        if exhibit.copilot_studio:
-            log.write(Text(f"COPILOT STUDIO {exhibit.copilot_studio}", style="#50E6FF"))
+        _write_exhibit(log, exhibit, position, total)
         scene = SCENES[self.scene_index]
         next_action = "Space runs the evidence" if scene.safe_steps else "Left/Right continues the story"
-        log.write(Text(f"\nPress C for the next exhibit. {next_action}.", style="dim"))
+        log.write(Text(f"\nPress X to expand. Press C for the next exhibit. {next_action}.", style="dim"))
+        self._render_controls()
+
+    def action_toggle_code_overlay(self) -> None:
+        if isinstance(self.screen, CodeOverlay):
+            self.screen.dismiss()
+            return
+        exhibits = EXHIBITS.get(SCENES[self.scene_index].number, ())
+        if self.running_demo or self.exhibit_index is None or not exhibits:
+            return
+        self.push_screen(CodeOverlay(exhibits[self.exhibit_index], self.exhibit_index, len(exhibits)))
 
     def action_scroll_up(self) -> None:
         self.query_one("#console", RichLog).scroll_page_up()
@@ -1020,12 +1246,12 @@ class AnatomyShow(App[None]):
 
     def action_toggle_mode(self) -> None:
         if not self.running_demo:
-            self.live = not self.live
+            self.remote = not self.remote
             self._render_scene()
 
     async def action_run_demo(self) -> None:
         scene = SCENES[self.scene_index]
-        steps = scene.steps_for(self.live)
+        steps = scene.local_steps()
         if self.running_demo or not steps:
             return
 
@@ -1036,11 +1262,11 @@ class AnatomyShow(App[None]):
         log = self.query_one("#console", RichLog)
         log.clear()
         try:
-            succeeded = await self._run_steps(steps, log)
+            succeeded = await self._run_steps(steps, log, remote=self.remote)
             if self._cancel_requested:
                 log.write(Text("\nDEMO CANCELLED  |  No fallback was started.", style="bold #F2CC60"))
-            elif not succeeded and self.live and scene.safe_steps != steps:
-                log.write(Text("\nLIVE PATH FAILED  |  FALLING BACK TO COMMITTED EVIDENCE\n", style="bold #F2CC60"))
+            elif not succeeded and scene.safe_steps != steps:
+                log.write(Text("\nLOCAL PATH FAILED  |  FALLING BACK TO COMMITTED EVIDENCE\n", style="bold #F2CC60"))
                 succeeded = await self._run_steps(scene.safe_steps, log)
             if succeeded and not self._cancel_requested:
                 log.write(Text("\nEVIDENCE COMPLETE", style="bold #7EE787"))
@@ -1052,7 +1278,7 @@ class AnatomyShow(App[None]):
             self.running_demo = False
             self._render_controls()
 
-    async def _run_steps(self, steps: tuple[DemoStep, ...], log: RichLog) -> bool:
+    async def _run_steps(self, steps: tuple[DemoStep, ...], log: RichLog, *, remote: bool = False) -> bool:
         for demo_step in steps:
             missing_files = [relative for relative in demo_step.required_files if not (ROOT / relative).exists()]
             if missing_files and demo_step.prepare_if_missing is not None:
@@ -1063,20 +1289,28 @@ class AnatomyShow(App[None]):
             for relative_path in demo_step.cleanup:
                 (ROOT / relative_path).unlink(missing_ok=True)
 
-            command = (sys.executable, "-m", "anatomy", *demo_step.args)
+            step_args = (*demo_step.args, "--remote") if remote and "--replay" not in demo_step.args else demo_step.args
+            command = (sys.executable, "-m", "anatomy", *step_args)
             log.write(_section_rule("COMMAND", "#50E6FF"))
-            log.write(Text(f"  $ python -m anatomy {' '.join(demo_step.args)}", style="#7FA6B8"))
+            log.write(Text(f"  $ python -m anatomy {' '.join(step_args)}", style="#7FA6B8"))
             log.write(Text(f"  {demo_step.label}\n", style="dim"))
             environment = os.environ.copy()
             environment.update({"PYTHONUTF8": "1", "COLUMNS": "110", "LINES": "40"})
-            self._process = await asyncio.create_subprocess_exec(
-                *command,
-                cwd=ROOT,
-                env=environment,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT,
-            )
-            output, _ = await self._process.communicate()
+            try:
+                self._process = await asyncio.create_subprocess_exec(
+                    *command,
+                    cwd=ROOT,
+                    env=environment,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.STDOUT,
+                )
+                output, _ = await self._process.communicate()
+            except Exception as exc:
+                detail = f"PROCESS ERROR: {type(exc).__name__}: {exc}"
+                _append_error_log(command, detail)
+                log.write(_section_rule("RESULT", "#FF4D6D"))
+                log.write(Text(f"  STATUS  FAILED\n  {detail}\n  ERROR LOG  {ERROR_LOG.name}\n", style="bold #FF4D6D"))
+                return False
             # Rich >=15 honours carriage returns, so CRLF from Windows subprocesses would blank each line.
             rendered = output.decode("utf-8", errors="replace").replace("\r\n", "\n").replace("\r", "").strip()
             log.write(_section_rule("EVIDENCE", "#F2CC60"))
@@ -1085,20 +1319,30 @@ class AnatomyShow(App[None]):
                 return False
             exit_code = self._process.returncode
             expected = exit_code in demo_step.expected_exit_codes
-            exit_style = "#7EE787" if expected else "#FF4D6D"
+            used_fallback = expected and "DETERMINISTIC FALLBACK" in rendered
+            exit_style = "#F2CC60" if used_fallback else "#7EE787" if expected else "#FF4D6D"
             expectation = "EXPECTED" if expected else "UNEXPECTED"
             log.write(_section_rule("RESULT", exit_style))
-            log.write(Text(f"  {expectation} EXIT  {exit_code}\n", style=f"bold {exit_style}"))
-            if not expected:
+            status = "PASSED WITH FALLBACK" if used_fallback else "PASSED" if expected else "FAILED"
+            log.write(Text(f"  STATUS  {status}\n  {expectation} EXIT  {exit_code}\n", style=f"bold {exit_style}"))
+            if used_fallback:
+                _append_error_log(command, "DEGRADED: deterministic fallback used", rendered)
+                log.write(Text(f"  ERROR LOG  {ERROR_LOG.name}\n", style="bold #F2CC60"))
+            elif not expected:
+                _append_error_log(command, f"UNEXPECTED EXIT: {exit_code}", rendered)
+                log.write(Text(f"  ERROR LOG  {ERROR_LOG.name}\n", style="bold #FF4D6D"))
                 return False
         return True
 
     def action_cancel_demo(self) -> None:
+        if isinstance(self.screen, CodeOverlay):
+            self.screen.dismiss()
+            return
         if self._process is not None and self._process.returncode is None:
             self._cancel_requested = True
             self._process.terminate()
 
 
-def run_show(*, start_scene: int = 1, live: bool = False) -> int:
-    AnatomyShow(start_scene=start_scene, live=live).run()
+def run_show(*, start_scene: int = 1, remote: bool = False) -> int:
+    AnatomyShow(start_scene=start_scene, remote=remote).run()
     return 0

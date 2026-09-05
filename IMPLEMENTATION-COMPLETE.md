@@ -254,7 +254,7 @@ python -m anatomy beat 14 --replay              # Test Beliefs
 ### Full Demo Flow
 ```powershell
 python -m anatomy show                          # 45-minute interactive show
-python -m anatomy show --from 13 --replay       # Resume at new organs
+python -m anatomy show --from 14                # Resume at the Spine recovery scene
 python -m anatomy present --replay --reset      # Presentation-width story
 ```
 
@@ -331,7 +331,7 @@ python -m anatomy beat 14 --replay --present    # Beliefs fullscreen
 ## Next Immediate Step for Presenter
 
 1. Run `python -m anatomy preflight` to confirm all dependencies pass
-2. Run `python -m anatomy show` for the full 19-scene interactive demo
+2. Run `python -m anatomy show` for the full 20-scene interactive demo
 3. Press Space on scenes 13-14 (or `Right` to navigate) to showcase Planning and Beliefs
 4. Use `python -m anatomy beat 13 --replay --present` and `beat 14` for focused deep dives
 5. Open `ORGAN-MICROSOFT-STACK.md` during Q&A to discuss cloud integration path

@@ -2,8 +2,7 @@
   "organ": "instructions",
   "status": "ok",
   "firing": [
-    "Instructions",
-    "Model"
+    "Instructions"
   ],
   "output": [
     "Demo setup: the application team owns Ada's instruction profiles; the model does not invent them.",

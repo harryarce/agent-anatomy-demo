@@ -6,6 +6,7 @@ import sqlite3
 import subprocess
 from pathlib import Path
 
+from dotenv import load_dotenv
 from rich.console import Console
 from rich.table import Table
 
@@ -85,6 +86,8 @@ def _tool_count(path: Path) -> int:
 
 def main() -> int:
     root = Path(__file__).resolve().parents[1]
+    env_path = root / ".env"
+    load_dotenv(env_path if env_path.exists() else root / ".env.example")
     checks: list[tuple[str, str, bool, str]] = []
 
     checks.append(("optional", "az login session", _run(["az", "account", "show"]), "Needed for live cloud demos."))

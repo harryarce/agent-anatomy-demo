@@ -14,6 +14,7 @@ from rich.text import Text
 
 from anatomy.banner import firing_line, organ_banner, payoff, vitals_panel
 from anatomy.common import DEFAULT_QUESTION, RunReport, attributed_story, attributed_story_text, save_report_replay
+from anatomy.llm import enhance_report_with_llm
 from anatomy.presentation import difference_panel, teaching_intro
 from scripts.preflight import main as preflight_main
 
@@ -132,6 +133,8 @@ async def _run_one(organ_name: str, args: argparse.Namespace, *, beat: int | Non
         resume=getattr(args, "resume", False),
         tool_search=getattr(args, "tool_search", False),
     )
+    if organ.name == "model":
+        run_options["remote"] = args.remote
     if args.autopsy and args.replay:
         console.print("[bold red]--autopsy requires a live/local run; committed replays contain only the intact run.[/]")
         return 2
@@ -141,6 +144,9 @@ async def _run_one(organ_name: str, args: argparse.Namespace, *, beat: int | Non
         intact_options["autopsy"] = ""
         intact = await runner(**intact_options)
         ablated = await runner(**run_options)
+        if args.remote and not args.replay and organ.name != "model":
+            intact = await enhance_report_with_llm(intact, question=QUESTION, trace=args.trace)
+            ablated = await enhance_report_with_llm(ablated, question=QUESTION, trace=args.trace)
         console.print(vitals_panel(active, stage=args.stage))
         if present:
             console.print(teaching_intro(organ.name, organ.number, story_beat, failure))
@@ -169,6 +175,8 @@ async def _run_one(organ_name: str, args: argparse.Namespace, *, beat: int | Non
         return 0
 
     report = await runner(**run_options)
+    if args.remote and not args.replay and organ.name != "model":
+        report = await enhance_report_with_llm(report, question=QUESTION, trace=args.trace)
 
     canonical_name = organ.name.title()
     active.add(canonical_name)
@@ -188,7 +196,7 @@ async def _run_one(organ_name: str, args: argparse.Namespace, *, beat: int | Non
         actor_text = Text()
         actor_text.append(f"[{actor}]", style="bold #50E6FF")
         actor_text.append(f"  {line}")
-        console.print(actor_text)
+        console.print(actor_text, soft_wrap=True)
     console.print(payoff(report.payoff, _usage_line(report)))
     if present:
         console.print(difference_panel(organ.name, report.landing_line))
@@ -196,7 +204,7 @@ async def _run_one(organ_name: str, args: argparse.Namespace, *, beat: int | Non
         takeaway = Text()
         takeaway.append("[NARRATOR]", style="bold #F2CC60")
         takeaway.append(f"  {report.landing_line}", style="bold")
-        console.print(takeaway)
+        console.print(takeaway, soft_wrap=True)
 
     if args.record:
         path = save_report_replay(report)
@@ -246,8 +254,9 @@ def build_parser() -> argparse.ArgumentParser:
     present.add_argument("--from", dest="from_beat", type=int, default=0)
 
     show = subparsers.add_parser("show", help="launch the fullscreen, keyboard-driven live presentation")
-    show.add_argument("--from", dest="from_scene", type=int, choices=range(1, 20), default=1)
-    show.add_argument("--live", action="store_true", help="prefer live and local execution over committed evidence")
+    show.add_argument("--from", dest="from_scene", type=int, choices=range(1, 21), default=1)
+    show.add_argument("--remote", action="store_true", help="augment local evidence with the configured Foundry LLM")
+    show.add_argument("--live", action="store_true", help=argparse.SUPPRESS)
 
     demo = subparsers.add_parser("demo")
     demo.add_argument("organ")
@@ -256,7 +265,9 @@ def build_parser() -> argparse.ArgumentParser:
     tools = subparsers.add_parser("tools")
 
     for target in (demo, beat, story, present, spine, tools):
-        target.add_argument("--replay", action="store_true")
+        execution = target.add_mutually_exclusive_group()
+        execution.add_argument("--replay", action="store_true")
+        execution.add_argument("--remote", action="store_true", help="use the configured Foundry LLM; local deterministic logic is the default")
         target.add_argument("--record", action="store_true")
         target.add_argument("--trace", action="store_true")
         target.add_argument("--stage", action="store_true")
@@ -293,7 +304,7 @@ def main() -> int:
     if args.command == "show":
         from anatomy.show import run_show
 
-        return run_show(start_scene=args.from_scene, live=args.live)
+        return run_show(start_scene=args.from_scene, remote=args.remote or args.live)
     if args.command == "spine":
         return asyncio.run(_run_one("spine", args, beat=10))
     if args.command == "tools":

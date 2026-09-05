@@ -1,9 +1,6 @@
 import json
-import os
-from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 from agent_framework import Agent
 from agent_framework.foundry import FoundryChatClient
@@ -11,6 +8,7 @@ from azure.identity.aio import AzureCliCredential
 
 from anatomy.budget import Usage
 from anatomy.common import RunReport, load_report_replay
+from anatomy.llm import failure_summary, foundry_settings, usage_from_response
 from anatomy.telemetry import timed_span
 
 STORY_BEAT = 0
@@ -39,30 +37,11 @@ def load_replay() -> ModelResult:
     )
 
 
-def _usage_from_response(response: Any, latency_seconds: float) -> Usage:
-    raw = getattr(response, "usage_details", None) or getattr(response, "usage", None)
-    if isinstance(raw, Mapping):
-        input_tokens = raw.get("input_token_count", raw.get("input_tokens", 0))
-        output_tokens = raw.get("output_token_count", raw.get("output_tokens", 0))
-    else:
-        input_tokens = getattr(raw, "input_token_count", 0)
-        output_tokens = getattr(raw, "output_token_count", 0)
-    return Usage(
-        input_tokens=int(input_tokens or 0),
-        output_tokens=int(output_tokens or 0),
-        latency_seconds=latency_seconds,
-    )
-
-
 async def run_live(*, replay: bool, trace: bool) -> ModelResult:
     if replay:
         return load_replay()
 
-    endpoint = os.getenv(
-        "FOUNDRY_PROJECT_ENDPOINT",
-        "https://haro-foundryai.services.ai.azure.com/api/projects/aiprj",
-    )
-    model = os.getenv("FOUNDRY_MODEL", os.getenv("FOUNDRY_MODEL_NAME", "gpt-5.6-terra"))
+    endpoint, model = foundry_settings()
     credential = AzureCliCredential()
     try:
         agent = Agent(
@@ -71,13 +50,12 @@ async def run_live(*, replay: bool, trace: bool) -> ModelResult:
                 model=model,
                 credential=credential,
             ),
-            instructions="Answer only from verified facts. State what must be checked when evidence is missing.",
         )
         with timed_span("organ.model", enabled=trace) as timing:
             response = await agent.run(QUESTION)
         return ModelResult(
             answer=str(response),
-            usage=_usage_from_response(response, timing["latency_seconds"]),
+            usage=usage_from_response(response, timing["latency_seconds"]),
             source=f"live Azure deployment {model}",
         )
     finally:
@@ -96,10 +74,29 @@ async def run_report(
     kill: bool,
     resume: bool,
     tool_search: bool,
+    remote: bool = False,
 ) -> RunReport:
     del question, record, stage, beat, kill, resume, tool_search
     if replay:
         return load_report_replay("model")
+    if not remote:
+        return RunReport(
+            organ="model",
+            status="ok",
+            firing=["Model"],
+            output=[
+                "A refund may be appropriate, but I cannot verify order 4471 or Contoso's eligibility from the information provided.",
+                "Next step: retrieve the approved refund policy and current order record before taking action.",
+            ],
+            payoff=[
+                "This deterministic baseline demonstrates the model's reasoning role without a network call.",
+                "It deliberately exposes the missing Knowledge and Tools organs that come next.",
+            ],
+            landing_line=LANDING_LINE,
+            usage=Usage(input_tokens=0, output_tokens=0, estimated_cost_usd=0.0, latency_seconds=0.0),
+            source="local deterministic model baseline",
+            labels=["LOCAL DETERMINISTIC"],
+        )
     try:
         model_result = await run_live(replay=False, trace=trace)
         output = [model_result.answer]
@@ -112,12 +109,12 @@ async def run_report(
         labels: list[str] = []
         usage = model_result.usage
     except Exception as exc:
-        status = "fail"
-        labels = ["LOCAL IMPLEMENTATION"]
+        status = "ok"
+        labels = ["DETERMINISTIC FALLBACK"]
         source = "local deterministic fallback"
         output = [
             "Section 4.2 says Contoso gets a full refund after any late shipment.",
-            f"Live model unavailable: {type(exc).__name__}",
+            f"Live model unavailable: {failure_summary(exc)}",
         ]
         payoff = [
             "This is a deterministic local fallback for stage safety.",
@@ -132,7 +129,7 @@ async def run_report(
     return RunReport(
         organ="model",
         status=status,
-        firing=["Model", "Observability", "Metabolism"],
+        firing=["Model"],
         output=output,
         payoff=payoff,
         landing_line=LANDING_LINE,

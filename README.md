@@ -15,19 +15,23 @@ python -m anatomy preflight
 python -m anatomy show
 ```
 
-`show` is the recommended audience experience: a 19-scene fullscreen terminal deck with organ vitals, keyboard navigation, executable evidence, live-to-replay recovery, and per-organ developer recipes. Each recipe shows how to attach the organ through public Agent Framework APIs and names the corresponding Copilot Studio component. Press `Space` to run a scene, `C` to show or hide the recipe, `Left`/`Right` to navigate, and `R` to switch between stage-safe and live/local execution.
+`show` is the recommended audience experience: a 20-scene fullscreen terminal deck with organ vitals, keyboard navigation, executable evidence, local-to-replay recovery, and per-organ developer recipes. Each recipe shows how to attach the organ through public Agent Framework APIs and names the corresponding Copilot Studio component. Press `Space` to run a scene, `C` to show or cycle the inline recipe, `X` to expand or collapse it, `Left`/`Right` to navigate, and `R` to switch between local deterministic and remote LLM execution.
 
-The stage-safe default uses committed evidence for network-sensitive moments. Start with `python -m anatomy show --live` when the Foundry connection is ready. The scrolling `present` command remains the universal fallback.
+The default executes fresh local deterministic logic: files, SQLite, guardrails, workflows, budgets, checkpoints, and a clearly labeled Model baseline. It does not contact Foundry. Use `python -m anatomy show --remote` when authentic LLM synthesis is worth the additional latency. The scrolling replay command remains the universal fallback.
 
 The recommended 45-minute route runs selected evidence while presenting the remaining scenes without execution. See [DEMO-SHOW.md](DEMO-SHOW.md#recommended-45-minute-route) for timings.
+
+Scene 20 includes a QR code linking to [harryarce/agent-anatomy-demo](https://github.com/harryarce/agent-anatomy-demo).
 
 ## Core commands
 
 ```powershell
 python -m anatomy list
 python -m anatomy show
-python -m anatomy show --live
-python -m anatomy show --from 13
+python -m anatomy show --remote
+python -m anatomy show --from 14
+python -m anatomy demo model --remote
+python -m anatomy beat 1 --remote
 python -m anatomy present --replay --reset
 python -m anatomy beat 0 --replay
 python -m anatomy beat 3 --replay
@@ -61,4 +65,4 @@ python -m anatomy story --from 5 --replay
 
 Notes:
 - Cloud-only features remain honest gaps and are labeled LOCAL IMPLEMENTATION or SIMULATED.
-- Live model calls use `AzureCliCredential` from the active `az login` session; no API keys are written to repo files.
+- Remote model calls use `AzureCliCredential` from the active `az login` session; no API keys are written to repo files.

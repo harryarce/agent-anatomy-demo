@@ -2,12 +2,10 @@
   "organ": "model",
   "status": "ok",
   "firing": [
-    "Model",
-    "Observability",
-    "Metabolism"
+    "Model"
   ],
   "output": [
-    "I can confirm only that Contoso is requesting a refund for order 4471. The appropriate action depends on information not provided.\n\nCheck:\n- Whether order 4471 exists and belongs to Contoso\n- Order status (fulfilled, delivered, cancelled, returned, etc.)\n- Applicable refund policy, contract terms, and refund window\n- Payment method and amount paid\n- Whether a return, credit, prior refund, dispute, or chargeback is already in progress\n- Required approval level and refund reason/evidence\n\nIf the request meets the applicable policy and approval requirements, process the refund through the original payment method and document the decision. If it does not, explain the applicable policy or escalate for an exception review."
+    "I don\u2019t have access to order 4471 or Contoso\u2019s account details, so we should first verify:\n\n- Order status and delivery/fulfillment date  \n- Items and refund reason  \n- Applicable refund window and any return requirements  \n- Original payment method and whether any prior refunds/chargebacks exist  \n\nIf the request is within policy, approve the return/refund and send the refund to the original payment method, then confirm the amount and expected processing time to Contoso. If it is outside policy or requires an item return, explain the applicable next steps and escalate for an exception if warranted."
   ],
   "payoff": [
     "Ada answered using live Azure deployment gpt-5.6-terra.",
@@ -15,10 +13,10 @@
   ],
   "landing_line": "A brain can answer, but without organs it cannot know whether its answer is true.",
   "usage": {
-    "input_tokens": 44,
-    "output_tokens": 201,
+    "input_tokens": 24,
+    "output_tokens": 183,
     "estimated_cost_usd": 0.0,
-    "latency_seconds": 23.443646499999886
+    "latency_seconds": 10.02371320000384
   },
   "labels": [],
   "source": "live Azure deployment gpt-5.6-terra"
