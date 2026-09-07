@@ -254,7 +254,7 @@ python -m anatomy beat 12 --replay --stage
 
 ## 7. Every Beat
 
-### Beat 0: Instructions and Model
+### Beat 0: Model, then Instructions
 
 Offline baseline:
 

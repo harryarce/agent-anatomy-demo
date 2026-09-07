@@ -1,13 +1,21 @@
 # Agent Anatomy Lab
 
-Ada is assembled on stage as one agent with independently runnable organs.
+Agent Anatomy Lab assembles Ada, a Contoso refund agent, one capability at a time. The project contains 16 independently runnable organs, a 15-beat command-line story, and a 20-scene fullscreen presentation.
 
-For the fullscreen presentation, start with [DEMO-SHOW.md](DEMO-SHOW.md). For every individual demo command, expected output, and detailed recovery step, see [DEMO-RUNBOOK.md](DEMO-RUNBOOK.md).
+The demo is stage-safe by design: fresh local deterministic evidence is the default, remote Foundry inference is opt-in, and committed replay transcripts provide an offline fallback.
+
+## Prerequisites
+
+- Windows PowerShell
+- Python 3.11
+- Azure CLI and an authorized `az login` session only for `--remote` mode
 
 ## Quickstart
 
+Run from the `agent-anatomy-lab` directory:
+
 ```powershell
-python -m venv .venv
+py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 python scripts/setup_data.py
@@ -15,30 +23,57 @@ python -m anatomy preflight
 python -m anatomy show
 ```
 
-`show` is the recommended audience experience: a 20-scene fullscreen terminal deck with organ vitals, keyboard navigation, executable evidence, local-to-replay recovery, and per-organ developer recipes. Each recipe shows how to attach the organ through public Agent Framework APIs and names the corresponding Copilot Studio component. Press `Space` to run a scene, `C` to show or cycle the inline recipe, `X` to expand or collapse it, `Left`/`Right` to navigate, and `R` to switch between local deterministic and remote LLM execution.
+Warnings about Azure authentication, Foundry, or Application Insights are acceptable for the default local mode. Required local checks must pass.
 
-The default executes fresh local deterministic logic: files, SQLite, guardrails, workflows, budgets, checkpoints, and a clearly labeled Model baseline. It does not contact Foundry. Use `python -m anatomy show --remote` when authentic LLM synthesis is worth the additional latency. The scrolling replay command remains the universal fallback.
+## Execution Modes
 
-The recommended 45-minute route runs selected evidence while presenting the remaining scenes without execution. See [DEMO-SHOW.md](DEMO-SHOW.md#recommended-45-minute-route) for timings.
+| Mode | Command pattern | Behavior |
+|---|---|---|
+| Local deterministic | `python -m anatomy show` | Default. Runs fresh files, SQLite, guardrails, workflows, budgets, triggers, and checkpoints without contacting Foundry. |
+| Remote LLM | `python -m anatomy show --remote` | Invokes `gpt-5.6-terra` for the Model scene and evidence-grounded synthesis elsewhere. Requires `az login`. |
+| Replay | `python -m anatomy present --replay --reset` | Reads committed JSON transcripts for a frozen, offline scrolling presentation. |
 
-Scene 20 includes a QR code linking to [harryarce/agent-anatomy-demo](https://github.com/harryarce/agent-anatomy-demo).
+Remote failures retain deterministic evidence and are labeled `DETERMINISTIC FALLBACK`. `--remote` and `--replay` are mutually exclusive.
+
+## Show Controls
+
+| Key | Action |
+|---|---|
+| `Left` / `Right` | Navigate scenes |
+| `Space` | Run the current scene's evidence |
+| `C` | Show, cycle, or hide the inline code exhibit |
+| `X` | Expand or collapse the visible code exhibit |
+| `R` | Switch between local deterministic and remote LLM mode |
+| `Page Up` / `Page Down` | Scroll evidence or expanded code |
+| `Home` / `End` | Jump to the first or final scene |
+| `Esc` | Close expanded code or cancel the active command |
+| `Q` | Exit |
+
+Scene 20 displays the live dependency stack, public resources, the full repository URL, and a QR code for [github.com/harryarce/agent-anatomy-demo](https://github.com/harryarce/agent-anatomy-demo).
 
 ## Core commands
 
 ```powershell
+# Inspect and validate
 python -m anatomy list
+python -m unittest discover -s tests
+python -m anatomy preflight
+
+# Present
 python -m anatomy show
 python -m anatomy show --remote
 python -m anatomy show --from 14
-python -m anatomy demo model --remote
-python -m anatomy beat 1 --remote
 python -m anatomy present --replay --reset
+
+# Run focused evidence
+python -m anatomy demo model --remote
 python -m anatomy beat 0 --replay
-python -m anatomy beat 3 --replay
 python -m anatomy beat 10 --kill
 python -m anatomy spine --resume
 python -m anatomy tools --tool-search --replay
 python -m anatomy beat 8 --autopsy knowledge
+
+# Capture or resume
 python -m anatomy demo model --record
 python -m anatomy story --from 5 --replay
 ```
@@ -66,3 +101,10 @@ python -m anatomy story --from 5 --replay
 Notes:
 - Cloud-only features remain honest gaps and are labeled LOCAL IMPLEMENTATION or SIMULATED.
 - Remote model calls use `AzureCliCredential` from the active `az login` session; no API keys are written to repo files.
+
+## More Documentation
+
+- [DEMO-SHOW.md](DEMO-SHOW.md): fullscreen controls, scene route, timings, and stage recovery
+- [DEMO-RUNBOOK.md](DEMO-RUNBOOK.md): every command, expected evidence, and troubleshooting step
+- [SPEAKER-ORGAN-TALK-TRACK.md](SPEAKER-ORGAN-TALK-TRACK.md): audience-facing narrative and landing lines
+- [KNOWN-GAPS.md](KNOWN-GAPS.md): local implementations, simulations, and cloud boundaries

@@ -41,6 +41,7 @@ Dependencies are pinned to the newest versions that satisfy the framework's own 
 | `azure-ai-projects` | 2.3.0 | Foundry requires `>=2.2.0,<2.4.0`, so 2.5.0 is **not** installable |
 | `opentelemetry-sdk` | 1.43.0 | Azure Monitor 1.8.9 instrumentation caps it below 1.44 |
 | `rich` / `textual` | 15.0.0 / 8.2.8 | Latest releases |
+| `qrcode` | 8.2 | Generates the scene-20 repository QR locally |
 
 Do not blindly upgrade `azure-ai-projects` or `opentelemetry-sdk`; both are capped by upstream constraints and pip will refuse to resolve.
 
@@ -68,7 +69,7 @@ Start from a specific scene:
 python -m anatomy show --from 14
 ```
 
-Valid scene numbers are 1 through 20. Scene 13 starts the Spine kill/resume sequence.
+Valid scene numbers are 1 through 20. Scenes 13–14 cover the Spine kill/resume sequence (beat 10); scenes 17–18 cover Planning and Beliefs (beats 13–14).
 
 If activating the virtual environment is blocked, launch it directly:
 
@@ -201,7 +202,7 @@ The Spine kill intentionally returns exit code 1. In the show, this is displayed
 4. Confirm scene 16 reaches `EVIDENCE COMPLETE` in local deterministic mode.
 5. Confirm scenes 13 and 14 display the expected kill followed by `SKIP` for completed steps.
 6. Confirm scenes 17 and 18 run Planning and Beliefs evidence and expose their code exhibits.
-7. Confirm scene 20 displays the live stack panel and the three public resource shortcuts.
+7. Confirm scene 20 displays the live stack panel, four public resource links, and the top-right repository QR.
 8. Keep the scrolling fallback command in terminal history.
 
 For individual organ commands and expected output, see [DEMO-RUNBOOK.md](DEMO-RUNBOOK.md). For concise speaking cues, see [DEMO-SCRIPT.md](DEMO-SCRIPT.md).

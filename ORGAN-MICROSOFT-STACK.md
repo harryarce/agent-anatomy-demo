@@ -1,6 +1,6 @@
 # Agent Anatomy Organs & Microsoft Stack Integration
 
-This document maps each agent anatomy organ to specific Microsoft Agent Framework, Azure AI Foundry, and Copilot Studio components.
+This document maps each agent anatomy organ to Microsoft Agent Framework, Microsoft Foundry, and Copilot Studio components. It separates what the local demo executes from production integration guidance; mappings are not claims that every cloud service is provisioned or invoked.
 
 ## New Organs: Planning & Beliefs
 
@@ -21,7 +21,7 @@ This document maps each agent anatomy organ to specific Microsoft Agent Framewor
 | **Structured Prompting** | Plan generation | System prompt: "Before acting, decompose into steps with dependencies" |
 | **Agent Tools** | Sub-step execution | Tool definitions that map to planned sub-goals |
 | **Power Automate (Copilot Studio)** | Parallelization | Parallel branches for independent sub-goals (e.g., verify order + check policy concurrently) |
-| **Azure AI Foundry** | Model selection | Use gpt-4o for complex decomposition, gpt-4-turbo for execution |
+| **Microsoft Foundry** | Optional synthesis | `--remote` uses the configured `gpt-5.6-terra` deployment to synthesize only from local evidence |
 | **OpenTelemetry Spans** | Audit trail | One span per sub-goal with parent-child relationships |
 
 **Copilot Studio Implementation:**
@@ -95,37 +95,21 @@ Topic: Refund Decision
 └─ Return Response
 ```
 
-**Code Pattern (Agent Framework with Foundry Memory):**
+**Code Pattern (Agent Framework attachment points):**
 ```python
-from azure.ai.projects.models import BlobStorageConnection
-from azure.ai.projects.aio import AIProjectClient
-
-async def handle_with_beliefs(client, customer_id, order_id):
-    # Load world state
-    beliefs = await foundry_client.memory.retrieve(f"customer#{customer_id}")
-    
-    # Build agent with belief context
-    agent = Agent(
+def add_beliefs(client, belief_provider, update_belief):
+    return Agent(
         client=client,
-        instructions=f"""
-        Current beliefs about {customer_id}:
-        - Tier: {beliefs.tier}
-        - Historical approval rate: {beliefs.approval_rate}
-        
-        Use these beliefs to inform decision thresholds.
-        After deciding, explain how beliefs shaped the outcome.
-        """,
-        context_providers=[beliefs_provider],
-        tools=[update_beliefs_tool]
+        instructions=(
+            "Use only evidence-backed world state. "
+            "Explain how any persisted update changes the next decision."
+        ),
+        context_providers=[belief_provider],
+        tools=[update_belief],
     )
-    
-    response = await agent.run(f"Handle order {order_id} for {customer_id}")
-    
-    # Persist belief updates
-    await foundry_client.memory.save(f"customer#{customer_id}", response.updated_beliefs)
-    
-    return response
 ```
+
+The shipped Beliefs organ persists to `.anatomy-beliefs.json`. Azure Table Storage, Dataverse, Cosmos DB, or a supported Foundry memory capability are production options, not runtime dependencies of this demo.
 
 **Demo Value:**
 - Shows agent learning across sessions (not just within chat)
@@ -140,7 +124,7 @@ async def handle_with_beliefs(client, customer_id, order_id):
 | Organ | Beat | Microsoft Stack |
 |-------|------|-----------------|
 | Instructions | 0 | Agent Framework system prompt + Copilot Studio topic instructions |
-| Model | 0 | Foundry model deployment + LLM routing (gpt-4o, Phi-3, Mixtral) |
+| Model | 0 | Local deterministic baseline by default; configured Foundry `gpt-5.6-terra` deployment with `--remote` |
 | **Planning** | **13** | **Structured prompting + Power Automate workflow orchestration** |
 
 ### Perception Organs (Eyes/Ears)
@@ -180,8 +164,8 @@ async def handle_with_beliefs(client, customer_id, order_id):
 ## Recommended Demo Sequence with Planning & Beliefs
 
 ```
-Beat 0:  Instructions        ← Safe start
-         + Model             (Agent Framework LLM core)
+Beat 0:  Model               ← Raw baseline first
+         then Instructions   (behavior control without changing the model)
 
 Beat 1:  Knowledge           (AI Search grounding)
 Beat 2:  Tools               (Power Automate connectors)

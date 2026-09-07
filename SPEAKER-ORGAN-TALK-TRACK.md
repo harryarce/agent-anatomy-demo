@@ -2,7 +2,7 @@
 
 Tell one continuous story: Contoso asks Ada to refund order 4471. Each organ solves the next problem exposed by the previous scene.
 
-For every demo: name the human problem, run evidence with `Space`, point to one decisive line, optionally open that organ's code with `C`, then deliver the landing line.
+For every demo: name the human problem, run evidence with `Space`, point to one decisive line, optionally open that organ's code with `C` and expand it with `X`, then deliver the landing line.
 
 ## Opening: Meet Ada
 
@@ -383,6 +383,8 @@ Pause on the complete anatomy.
 Finish slowly:
 
 > The difference between a compelling demo and a dependable agent is anatomy.
+
+Leave scene 20 visible for questions. Point to the full GitHub URL or invite the audience to scan the top-right QR code for the runnable demo.
 
 ## Emergency One-Line Route
 

@@ -1,6 +1,8 @@
-# Agent Anatomy Lab: Planning & Beliefs Organs - Implementation Complete
+# Agent Anatomy Lab: Current Implementation Status
 
-**Status:** ✅ COMPLETE & VALIDATED
+**Status:** COMPLETE AND VALIDATED LOCALLY
+
+This is a current-state implementation summary, not a production-readiness claim. The demo has 16 runnable organs across 15 beats and a 20-scene fullscreen show. Fresh local deterministic execution is the default; Foundry inference is opt-in with `--remote`, and committed transcripts remain available through `--replay`.
 
 ---
 
@@ -9,13 +11,13 @@
 ### Problem Statement
 - **Risk Identified:** Beat 12 (Reflex Arc) uses filesystem-triggered autonomous wake unsuitable for live demo
 - **Solution:** Safe demo sequence already starts at beat 0; extend narrative arc with two new industry-validated organs after reflex arc
-- **Industry Alignment:** All 16 organ names validated against Xi et al. 2023 agent architecture literature
+- **Narrative Alignment:** Planning and Beliefs complete the 16-organ vocabulary used by the current show
 
 ### Two New Organs Added
 
 #### Beat 13: Planning (Goal Decomposition)
-- **File:** `anatomy/organs/o12_planning.py` (2,911 bytes)
-- **Replay:** `replays/planning.json` (1,900 bytes)
+- **File:** `anatomy/organs/o12_planning.py`
+- **Replay:** `replays/planning.json`
 - **Status:** Ready, LOCAL IMPLEMENTATION
 - **Capability:** Breaks complex escalations into measurable sub-goals with audit trails
 - **Demo Output:** Goal tree (GOAL → 4 SUBGOALs) with readiness and dependency validation
@@ -23,8 +25,8 @@
 - **Landing Line:** "Planning decomposed reactive autonomy into measurable, auditable sub-goals."
 
 #### Beat 14: Beliefs (World State & Learning)
-- **File:** `anatomy/organs/o15_beliefs.py` (3,888 bytes)
-- **Replay:** `replays/beliefs.json` (2,135 bytes)
+- **File:** `anatomy/organs/o15_beliefs.py`
+- **Replay:** `replays/beliefs.json`
 - **Status:** Ready, LOCAL IMPLEMENTATION
 - **Capability:** Explicit world state management with belief updates cascading to future decisions
 - **Demo Output:** JSON belief store before/after with evidence and downstream impacts
@@ -45,7 +47,7 @@ anatomy/organs/o15_beliefs.py       STORY_BEAT=14, world state management patter
 - STORY_BEAT constant (numeric identifier)
 - FAILURE_IT_FIXES string (what problem does this organ solve)
 - LANDING_LINE string (memorable takeaway for audience)
-- async run(agent, question, context) → RunReport (standard interface)
+- keyword-only `async run(...) -> RunReport` entry point used by the shared runner
 - Integrated with existing organs: Instructions, Model, Knowledge, Tools, Observability
 
 ### 2. Replay Fixtures (Stage-Safe)
@@ -72,12 +74,12 @@ def add_planning(client, goal_decomposer) → Agent:
         tools=[goal_decomposer]
     )
 
-def add_beliefs(client, belief_store) → Agent:
+def add_beliefs(client, belief_provider, update_belief) → Agent:
     """Shows how to attach beliefs via context_providers + tools."""
     return Agent(
         instructions="Before deciding, load beliefs about customer...",
-        context_providers=[belief_store],
-        tools=[belief_store]  # for updates
+        context_providers=[belief_provider],
+        tools=[update_belief]
     )
 ```
 
@@ -188,20 +190,10 @@ python -m anatomy beat 14 --replay --present
 # ✓ Renders in fullscreen presentation mode
 ```
 
-### File Integrity ✅
-```
-anatomy/organs/o12_planning.py      2,911 bytes ✓
-anatomy/organs/o15_beliefs.py       3,888 bytes ✓
-replays/planning.json               1,900 bytes ✓
-replays/beliefs.json                2,135 bytes ✓
-```
-
----
-
 ## Demo Recommended Sequence (45-minute talk)
 
 ```
-Beat 0:  Instructions + Model       ← Safe opening
+Beat 0:  Model, then Instructions   ← Safe opening
 Beat 1:  Knowledge                  (grounding with evidence)
 Beat 2:  Tools                      (zero-code capability)
 Beat 3:  Skills                     (plugin ecosystem)
@@ -231,9 +223,9 @@ Beat 14: Beliefs                    ← NEW (world state cascade & learning)
 - ✅ No core framework modifications needed
 
 ### Azure AI Foundry
-- ✅ Planning organ compatible with model routing (gpt-4o for decomposition, gpt-4-turbo for execution)
-- ✅ Beliefs organ ready for Foundry Memory service integration
-- ✅ Both organs show token/cost/latency metrics using Foundry telemetry
+- ✅ Remote mode can ask the configured `gpt-5.6-terra` deployment to synthesize from deterministic Planning and Beliefs evidence
+- ✅ Beliefs has a documented path to a governed cloud store or Foundry memory capability
+- ✅ Local runs retain deterministic evidence when remote inference is disabled or fails
 
 ### Copilot Studio
 - ✅ Planning maps to Power Automate workflow orchestration with sub-goal branching
@@ -294,27 +286,27 @@ python -m anatomy beat 14 --replay --present    # Beliefs fullscreen
 
 ✅ **Risk Mitigation:** Reflex arc demo hazard (filesystem sync) neutralized by placing it as climactic finale after audience understands agent mechanics.
 
-✅ **Industry Alignment:** All 16 organ names validated against academic literature. Planning and Beliefs fill identified gaps in original 14-organ architecture.
+✅ **Narrative Alignment:** Planning and Beliefs fill the two gaps in the original 14-organ demo design.
 
 ✅ **Complete Implementation:** Both organs follow exact existing patterns (STORY_BEAT, LANDING_LINE, async run(), RunReport output).
 
-✅ **Production Ready:** Replay data committed for stage-safe demo. Live Foundry integration path documented and tested.
+✅ **Stage Ready:** Local evidence and replay data are committed; remote Foundry access is optional and degrades to labeled deterministic evidence.
 
 ✅ **Microsoft Stack Integration:** All organs mapped to specific Agent Framework, Foundry, and Copilot Studio components with implementation recipes.
 
 ✅ **Developer Documentation:** ORGAN-MICROSOFT-STACK.md provides complete reference for production deployments.
 
-✅ **Demo Commands:** All 16 beats are independently runnable with `python -m anatomy beat <N> --replay --present`.
+✅ **Demo Commands:** All 15 beats are independently runnable with `python -m anatomy beat <N> --replay --present`; beats 0 and 11 each contain two organs.
 
 ---
 
 ## File Manifest
 
 **New Files Created:**
-- `anatomy/organs/o12_planning.py` — Planning organ (2,911 bytes)
-- `anatomy/organs/o15_beliefs.py` — Beliefs organ (3,888 bytes)
-- `replays/planning.json` — Planning stage-safe replay (1,900 bytes)
-- `replays/beliefs.json` — Beliefs stage-safe replay (2,135 bytes)
+- `anatomy/organs/o12_planning.py` — Planning organ
+- `anatomy/organs/o15_beliefs.py` — Beliefs organ
+- `replays/planning.json` — Planning stage-safe replay
+- `replays/beliefs.json` — Beliefs stage-safe replay
 - `ORGAN-MICROSOFT-STACK.md` — Comprehensive integration guide (NEW)
 
 **Files Modified:**
@@ -332,12 +324,11 @@ python -m anatomy beat 14 --replay --present    # Beliefs fullscreen
 
 1. Run `python -m anatomy preflight` to confirm all dependencies pass
 2. Run `python -m anatomy show` for the full 20-scene interactive demo
-3. Press Space on scenes 13-14 (or `Right` to navigate) to showcase Planning and Beliefs
+3. Press `Space` on scenes 17–18 (or `Right` to navigate) to showcase Planning and Beliefs
 4. Use `python -m anatomy beat 13 --replay --present` and `beat 14` for focused deep dives
 5. Open `ORGAN-MICROSOFT-STACK.md` during Q&A to discuss cloud integration path
 
 ---
 
-**Implementation Completed:** [Current Session]
-**Validation Status:** All tests pass, all commands verified
-**Production Ready:** YES
+**Validation Status:** 66 automated tests pass; current operator commands are documented in `README.md` and `DEMO-RUNBOOK.md`.
+**Demo Ready:** YES. See `KNOWN-GAPS.md` before making production claims.
