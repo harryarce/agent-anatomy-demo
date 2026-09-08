@@ -1,3 +1,8 @@
+---
+name: pdf-summary
+description: Summarize supplied policy text and order evidence for an escalation attachment; does not parse or generate PDF files.
+---
+
 # PDF Summary Skill
 
 Purpose: Generate a short escalation summary suitable for attaching to a ticket.

@@ -1,3 +1,8 @@
+---
+name: house-style
+description: Apply concise, evidence-based, citation-first style when drafting customer escalation responses.
+---
+
 # House Style Skill
 
 Purpose: Keep customer escalation responses concise, evidence-based, and citation-first.

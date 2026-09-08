@@ -13,7 +13,7 @@ from textual.widgets import RichLog, Static
 
 from anatomy import runner
 from anatomy.common import load_report_replay
-from anatomy.show import ANATOMY, EXHIBITS, ORGAN_HIGHLIGHTS, REPOSITORY_URL, ROOT, SCENES, AnatomyShow, CodeOverlay, DemoStep, ResultsOverlay, load_exhibit, repository_qr_text, stack_report
+from anatomy.show import ANATOMY, EXHIBITS, ORGAN_FOCUS_BACKGROUND, ORGAN_HIGHLIGHTS, REPOSITORY_URL, ROOT, SCENES, AnatomyShow, CodeOverlay, DemoStep, ResultsOverlay, load_exhibit, repository_qr_text, stack_report
 from agent_framework import Agent, InMemoryHistoryProvider, ToolApprovalMiddleware, Workflow
 from examples import organ_recipes
 
@@ -284,6 +284,14 @@ class ShowInteractionTests(unittest.IsolatedAsyncioTestCase):
             self.assertIn("build_model_agent", self.rendered_log(app))
             self.assertNotIn("instructions=", self.rendered_log(app))
             self.assertIn("COPILOT STUDIO", self.rendered_log(app))
+            self.assertIn("ORGAN FOCUS", self.rendered_log(app))
+            focus_backgrounds = {
+                segment.style.bgcolor.triplet.hex
+                for line in app.screen.query_one("#expanded-code", RichLog).lines
+                for segment in line
+                if segment.style and segment.style.bgcolor and segment.style.bgcolor.triplet
+            }
+            self.assertIn(ORGAN_FOCUS_BACKGROUND.lower(), focus_backgrounds)
 
             await pilot.press("c")
             await pilot.pause()

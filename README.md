@@ -25,6 +25,14 @@ python -m anatomy show
 
 Warnings about Azure authentication, Foundry, or Application Insights are acceptable for the default local mode. Required local checks must pass.
 
+If public PyPI downloads fail TLS negotiation in a Microsoft-managed environment where the Microsoft package feed is approved, use an explicit install-time index:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install --index-url https://packagefeedproxy.microsoft.io/pypi/simple -r requirements.txt
+```
+
+This leaves global package configuration unchanged and keeps TLS verification enabled. The mirror can lag public PyPI releases; a missing version is separate from a TLS failure.
+
 ## Execution Modes
 
 | Mode | Command pattern | Behavior |
@@ -104,6 +112,7 @@ Notes:
 
 ## More Documentation
 
+- [examples/SAMPLE-REVIEW.md](examples/SAMPLE-REVIEW.md): official-source review of all 16 audience recipes, tested versions, and stage-simulation limitations
 - [DEMO-SHOW.md](DEMO-SHOW.md): fullscreen controls, scene route, timings, and stage recovery
 - [DEMO-RUNBOOK.md](DEMO-RUNBOOK.md): every command, expected evidence, and troubleshooting step
 - [SPEAKER-ORGAN-TALK-TRACK.md](SPEAKER-ORGAN-TALK-TRACK.md): audience-facing narrative and landing lines

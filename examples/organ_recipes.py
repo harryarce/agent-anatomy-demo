@@ -1,16 +1,20 @@
 """Small, adaptable recipes for attaching agent capabilities."""
 
 import json
+from contextlib import AsyncExitStack
 from pathlib import Path
 from typing import Any
 
 from agent_framework import (
     Agent,
-    AgentMiddleware,
+    ChatMiddleware,
     ContextProvider,
     FileCheckpointStorage,
+    FunctionMiddleware,
     FunctionTool,
     MiddlewareTypes,
+    SkillsProvider,
+    ToolApprovalMiddleware,
     Workflow,
     WorkflowBuilder,
     tool,
@@ -18,6 +22,7 @@ from agent_framework import (
 from agent_framework.observability import configure_otel_providers
 from agent_framework.foundry import FoundryChatClient
 from azure.identity.aio import DefaultAzureCredential
+from pydantic import BaseModel, Field
 
 
 def build_model_agent(client: Any) -> Agent:
@@ -76,7 +81,7 @@ def add_memory(client: Any, customer_memory: ContextProvider) -> Agent:
     )
 
 
-def add_guardrails(client: Any, safety_middleware: AgentMiddleware) -> Agent:
+def add_guardrails(client: Any, safety_middleware: MiddlewareTypes) -> Agent:
     return Agent(
         client=client,
         instructions="Never reveal another customer's data.",
@@ -96,13 +101,16 @@ def build_reviewed_workflow(
 
 
 async def run_with_identity(endpoint: str, model: str, prompt: str) -> str:
-    async with DefaultAzureCredential() as credential:
+    async with AsyncExitStack() as stack:
+        credential = await stack.enter_async_context(DefaultAzureCredential())
         client = FoundryChatClient(
             project_endpoint=endpoint,
             model=model,
             credential=credential,
         )
-        agent = Agent(client=client)
+        stack.push_async_callback(client.project_client.close)
+        stack.push_async_callback(client.client.close)
+        agent = await stack.enter_async_context(Agent(client=client))
         return str(await agent.run(prompt))
 
 
@@ -110,11 +118,13 @@ def enable_observability() -> None:
     configure_otel_providers(env_file_path=".env")
 
 
-def add_budget(client: Any, budget_middleware: AgentMiddleware) -> Agent:
+def add_budget(
+    client: Any, model_budget: ChatMiddleware, tool_budget: FunctionMiddleware
+) -> Agent:
     return Agent(
         client=client,
         instructions="Stop when the run budget is exhausted.",
-        middleware=[budget_middleware],
+        middleware=[model_budget, tool_budget],
     )
 
 
@@ -136,15 +146,31 @@ def build_checkpointed_workflow(
 
 async def resume_workflow(workflow: Workflow, checkpoint_id: str) -> str:
     result = await workflow.run(checkpoint_id=checkpoint_id)
-    return str(result.get_outputs()[-1])
+    outputs = result.get_outputs()
+    if not outputs:
+        raise RuntimeError("Workflow has no terminal output; inspect pending requests and events.")
+    return str(outputs[-1])
 
 
-def add_skill(client: Any, triage_skill: FunctionTool) -> Agent:
+def add_skill(client: Any, skills_path: Path) -> Agent:
+    provider = SkillsProvider.from_paths(skill_paths=skills_path)
+    approval = ToolApprovalMiddleware(
+        auto_approval_rules=[SkillsProvider.read_only_tools_auto_approval_rule]
+    )
     return Agent(
         client=client,
         instructions="Select a skill only when its description matches the task.",
-        tools=[triage_skill],
+        context_providers=[provider],
+        middleware=[approval],
     )
+
+
+async def run_skill(agent: Agent, prompt: str) -> str:
+    session = agent.create_session()
+    response = await agent.run(prompt, session=session)
+    if response.user_input_requests:
+        raise RuntimeError("Skill execution requires explicit host approval.")
+    return str(response)
 
 
 def promote_instruction(candidate: str, evaluator: Any) -> str:
@@ -168,15 +194,36 @@ def compose_agent(
     )
 
 
-def add_planning(client: Any, goal_decomposer: FunctionTool) -> Agent:
+class PlanStep(BaseModel):
+    name: str
+    depends_on: list[str]
+    success_condition: str
+
+
+class ExecutionPlan(BaseModel):
+    steps: list[PlanStep] = Field(min_length=1)
+
+
+def add_planning(client: Any) -> Agent:
     return Agent(
         client=client,
         instructions=(
-            "Before acting, decompose the goal into ordered, measurable sub-steps. "
-            "Return each dependency and success condition."
+            "Only plan; do not execute actions. Decompose the goal into ordered steps. "
+            "Give each step a unique name, dependencies, and a success condition."
         ),
-        tools=[goal_decomposer],
+        default_options={"response_format": ExecutionPlan},
     )
+
+
+async def create_plan(agent: Agent, goal: str) -> ExecutionPlan:
+    response = await agent.run(goal)
+    plan = ExecutionPlan.model_validate(response.value)
+    completed: set[str] = set()
+    for step in plan.steps:
+        if step.name in completed or not set(step.depends_on) <= completed:
+            raise ValueError("Plan has duplicate names or dependencies out of order.")
+        completed.add(step.name)
+    return plan
 
 
 def add_beliefs(

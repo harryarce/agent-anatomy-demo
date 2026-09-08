@@ -23,6 +23,7 @@ from anatomy.runner import ORGANS as REGISTERED_ORGANS
 ROOT = Path(__file__).resolve().parents[1]
 ERROR_LOG = ROOT / ".anatomy-errors.log"
 REPOSITORY_URL = "https://github.com/harryarce/agent-anatomy-demo"
+ORGAN_FOCUS_BACKGROUND = "#164E63"
 
 
 @dataclass(frozen=True, slots=True)
@@ -444,10 +445,10 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             "examples/organ_recipes.py",
             "def add_knowledge(client: Any, policy_provider: ContextProvider) -> Agent:",
             "python",
-            "Attach a context provider that retrieves approved policy evidence before the model answers.",
+            "Attach an application-supplied context provider for approved policy evidence.",
             (
-                "The provider owns retrieval; the instruction requires a visible citation.",
-                "Swap a local index for Azure AI Search without changing the agent contract.",
+                "Implement retrieval in the provider; ContextProvider alone retrieves nothing.",
+                "The prompt requests citations; validate source references separately.",
             ),
             "Add SharePoint, Dataverse, websites, or files on the Knowledge page and configure the agent to cite grounded sources.",
             before=0,
@@ -472,14 +473,14 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
     ),
     6: (
         CodeExhibit(
-            "Our toolbox: new capability declared in configuration",
+            "Our toolbox: local configuration illustration",
             "toolbox.add-tool.yaml",
             "- name: carrier_delay_status",
             "yaml",
-            "A tool is a declared entry with a name, a kind, and a description.",
+            "This repository's YAML illustrates tool metadata; it is not a portable Agent Framework registration API.",
             (
-                "The description is what the model reads when choosing a tool.",
-                "Adding capability here required no change to any Python file.",
+                "The local demo reads tool names; it does not connect to an MCP server.",
+                "Use the official MCP or Foundry Toolbox client samples for live discovery.",
             ),
             "Tools are registered on the agent and generative orchestration selects among them from their names, descriptions, inputs, and outputs.",
             before=4,
@@ -492,12 +493,12 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             "examples/organ_recipes.py",
             "def add_memory(client: Any, customer_memory: ContextProvider) -> Agent:",
             "python",
-            "Attach a customer-scoped memory provider that can recall relevant facts on later runs.",
+            "Attach an application-supplied memory provider; the provider must implement durable storage and recall.",
             (
-                "Scope storage by authenticated customer or tenant before attaching it.",
-                "Keep durable memory separate from one conversation's message history.",
+                "Use authenticated customer and tenant keys, not model-supplied identity.",
+                "An in-memory history provider does not prove cross-session durability.",
             ),
-            "Use conversation variables for session state and Dataverse or an action for durable, user-scoped facts across conversations.",
+            "Standard harness: variables for session state; Dataverse/actions for durable facts. GitHub Copilot harness: Memory (preview) provides per-user recall with retention limits.",
             before=0,
             after=5,
         ),
@@ -506,12 +507,12 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
         CodeExhibit(
             "Add the organ: guardrail middleware",
             "examples/organ_recipes.py",
-            "def add_guardrails(client: Any, safety_middleware: AgentMiddleware) -> Agent:",
+            "def add_guardrails(client: Any, safety_middleware: MiddlewareTypes) -> Agent:",
             "python",
-            "Attach safety middleware outside the prompt so it can block a run before a tool or model proceeds.",
+            "Attach implemented policy middleware at the boundary it must protect.",
             (
-                "Use instructions for policy and middleware for enforceable checks.",
-                "Return a reason with every block so operations teams can audit it.",
+                "AgentMiddleware wraps runs; ChatMiddleware wraps model calls; FunctionMiddleware wraps tools.",
+                "This wiring is not a PII filter or authorization policy; implement and test those checks.",
             ),
             "Combine agent instructions and moderation with authentication, connector permissions, environment security, and Power Platform DLP policies.",
             before=0,
@@ -526,8 +527,8 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             "python",
             "Connect named agents with explicit edges using the public WorkflowBuilder API.",
             (
-                "Each boundary can be traced, tested, retried, or replaced independently.",
-                "Add conditional routing when the reviewer needs to reject a draft.",
+                "This is a sequential handoff, not a reviewer approval gate.",
+                "Use structured review results and conditional edges to enforce rejection or rework.",
             ),
             "Use topics or deterministic agent flows for explicit steps; use child or connected agents for specialist delegation.",
             before=0,
@@ -540,14 +541,14 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             "examples/organ_recipes.py",
             "async def run_with_identity(endpoint: str, model: str, prompt: str) -> str:",
             "python",
-            "Use DefaultAzureCredential so development and managed identity share one code path with explicit cleanup.",
+            "Authenticate the Foundry client with an Entra credential and close all owned clients.",
             (
-                "Assign the deployed identity only the roles its tools require.",
-                "Dispose the credential with the application lifecycle.",
+                "DefaultAzureCredential is a credential chain, not proof of a unique agent identity or least privilege.",
+                "Choose an explicit production identity; resource RBAC and tool authorization are separate.",
             ),
             "Configure agent authentication with Microsoft Entra ID, then use connection references and each connector's identity settings for least privilege.",
             before=0,
-            after=8,
+            after=11,
         ),
     ),
     11: (
@@ -568,18 +569,18 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
     ),
     12: (
         CodeExhibit(
-            "Add the organ: a hard run budget",
+            "Add the organ: budget policy attachment points",
             "examples/organ_recipes.py",
-            "def add_budget(client: Any, budget_middleware: AgentMiddleware) -> Agent:",
+            "def add_budget(",
             "python",
-            "Attach middleware that checks token, cost, time, or step limits before allowing more work.",
+            "Attach application-supplied model and tool budget checks at their respective operation boundaries.",
             (
-                "Meter before each operation and reject the operation that would cross the cap.",
-                "Record the rejection so an operator can distinguish budget stops from failures.",
+                "Implement per-run accounting, reservations, and rejection in these middleware classes.",
+                "Usage arrives after calls; a hard spend cap also needs bounded output and concurrency control.",
             ),
             "Review capacity and usage in analytics and the Power Platform admin center; enforce per-run hard limits inside the called flow or action.",
             before=0,
-            after=5,
+            after=7,
         ),
     ),
     13: (
@@ -590,7 +591,7 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             "python",
             "Provide FileCheckpointStorage when building a workflow to capture each superstep.",
             (
-                "Use file storage for local development and Cosmos storage for distributed production runs.",
+                "Use file storage locally; select a supported durable backend for distributed runs.",
                 "Framework checkpoints preserve executor state, pending messages, and shared state.",
             ),
             "Use a deterministic agent flow for durable trigger/action execution; persist business checkpoints and idempotency keys in Dataverse.",
@@ -611,33 +612,47 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             ),
             "Cloud flow retry policies and run history handle transient failures; use Dataverse state and idempotent actions when a run must resume safely.",
             before=0,
-            after=2,
+            after=5,
         ),
     ),
     15: (
         CodeExhibit(
             "Add the organ: modular skill selection",
             "examples/organ_recipes.py",
-            "def add_skill(client: Any, triage_skill: FunctionTool) -> Agent:",
+            "def add_skill(client: Any, skills_path: Path) -> Agent:",
             "python",
-            "Package specialist behavior behind a well-described tool and attach it only where needed.",
+            "Discover SKILL.md packages with SkillsProvider.from_paths and attach the provider as context.",
             (
-                "The skill description is the routing contract.",
-                "Loading expertise on demand keeps the base instructions small.",
+                "The provider advertises metadata and supplies load_skill for progressive disclosure.",
+                "Auto-approve read-only access only for reviewed skills; scripts still require approval and a runner.",
             ),
-            "Model reusable expertise as a topic, prompt tool, agent flow, or connected specialist agent, with a precise description for routing.",
+            "Standard harness: topics, prompt tools, flows, or specialists provide reusable behavior. GitHub Copilot harness exposes tools and skills; do not assume Agent Framework API parity.",
+            before=0,
+            after=10,
+        ),
+        CodeExhibit(
+            "Run the skill-enabled agent with a session",
+            "examples/organ_recipes.py",
+            "async def run_skill(agent: Agent, prompt: str) -> str:",
+            "python",
+            "A session preserves the skill approval conversation; pending approvals must not be mistaken for an answer.",
+            (
+                "This read-only example stops if explicit host approval is required.",
+                "For scripts, use the official approval-response loop with the same session and a sandboxed runner.",
+            ),
+            "Use the approval and connection controls supported by your selected Copilot Studio harness.",
             before=0,
             after=5,
         ),
         CodeExhibit(
-            "Add the organ: promote only measured improvements",
+            "Add the organ: select an evaluated candidate",
             "examples/organ_recipes.py",
             "def promote_instruction(candidate: str, evaluator: Any) -> str:",
             "python",
-            "Score a candidate instruction against the current version and keep it only when it performs better.",
+            "Compare scores from an application-supplied evaluator; return a candidate without publishing it.",
             (
-                "Use a stable evaluation set so scores remain comparable.",
-                "Require human review before publishing instruction changes.",
+                "Use the same held-out evaluation set and safety gates for both scores.",
+                "This is selection logic, not an optimizer or deployment; human approval and versioning are separate.",
             ),
             "Use test sets, agent evaluations, analytics, and conversation transcripts to compare changes before editing instructions and republishing.",
             before=0,
@@ -652,8 +667,8 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             "python",
             "An event handler turns a business event into an agent run without waiting for chat.",
             (
-                "Connect this handler to OneDrive, SharePoint, Event Grid, or Service Bus.",
-                "Keep the trigger adapter separate from the agent so event sources stay swappable.",
+                "This is the handler, not an installed event subscription or scheduler.",
+                "The host must validate event identity, payload, retries, and idempotency before calling it.",
             ),
             "Use an event trigger or Power Automate flow to start the agent when a file, message, or business event arrives.",
             before=0,
@@ -662,18 +677,46 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
     ),
     17: (
         CodeExhibit(
+            "Define the structured plan contract",
+            "examples/organ_recipes.py",
+            "class PlanStep(BaseModel):",
+            "python",
+            "Define steps, dependencies, and success conditions with Pydantic models.",
+            (
+                "A nonempty plan is required; dependencies reference preceding step names.",
+                "Schema conformance does not prove feasibility or policy compliance.",
+            ),
+            "Standard harness generative orchestration plans over available capabilities; use flows for fixed business sequences.",
+            before=0,
+            after=7,
+        ),
+        CodeExhibit(
             "Add the organ: decompose before acting",
             "examples/organ_recipes.py",
-            "def add_planning(client: Any, goal_decomposer: FunctionTool) -> Agent:",
+            "def add_planning(client: Any) -> Agent:",
             "python",
-            "Attach one clearly described planning tool and require an ordered plan before execution.",
+            "Ask a model that supports structured output for an ExecutionPlan; no planning tool is required.",
             (
-                "Planning defines what should happen; orchestration controls how those steps run.",
-                "Keep the returned plan structured so every dependency can be traced and tested.",
+                "Planning proposes work; this agent has no business tools and does not execute the plan.",
+                "Validate the plan and enforce policy before a separate workflow executes it.",
             ),
             "Use generative orchestration to choose actions, or an agent flow when the sequence must be explicit and deterministic.",
             before=0,
-            after=9,
+            after=8,
+        ),
+        CodeExhibit(
+            "Validate dependencies before execution",
+            "examples/organ_recipes.py",
+            "async def create_plan(agent: Agent, goal: str) -> ExecutionPlan:",
+            "python",
+            "Parse the typed response and reject duplicate names or dependencies that are missing or out of order.",
+            (
+                "This check rejects cycles in an ordered plan without executing any steps.",
+                "Add business feasibility, authorization, and approval checks before dispatch.",
+            ),
+            "Use explicit conditions and approval steps in a flow when business validation must be deterministic.",
+            before=0,
+            after=8,
         ),
     ),
     18: (
@@ -682,10 +725,10 @@ EXHIBITS: dict[int, tuple[CodeExhibit, ...]] = {
             "examples/organ_recipes.py",
             "def add_beliefs(",
             "python",
-            "Load verified world state as context and expose a governed tool for persisting updates.",
+            "Represent beliefs as application-owned state: supply a context provider and a validated update tool.",
             (
-                "Beliefs describe the world; memory preserves user continuity; learning improves the agent scaffold.",
-                "Persist only evidence-backed changes and retain an audit trail.",
+                "There is no native Beliefs constructor here; both dependencies need an implementation.",
+                "Enforce evidence, authorization, policy invariants, and audit history in the update path, not the prompt.",
             ),
             "Store governed state in Dataverse and retrieve or update it through authenticated actions or agent flows.",
             before=0,
@@ -841,17 +884,24 @@ def _write_exhibit(log: RichLog, exhibit: CodeExhibit, position: int, total: int
     except (OSError, ValueError) as error:
         log.write(Text(f"Exhibit unavailable: {error}", style="bold #FF4D6D"))
         return
-    log.write(
-        Syntax(
-            snippet,
-            exhibit.language,
-            theme="monokai",
-            line_numbers=True,
-            start_line=start_line,
-            highlight_lines={focus_line},
-            word_wrap=True,
-        )
+    log.write(Text(f"ORGAN FOCUS   highlighted source line {focus_line}", style="bold #F2CC60"))
+    syntax = Syntax(
+        snippet,
+        exhibit.language,
+        theme="monokai",
+        line_numbers=True,
+        start_line=start_line,
+        highlight_lines={focus_line},
+        word_wrap=True,
     )
+    relative_focus_line = focus_line - start_line + 1
+    focus_text = snippet.splitlines()[relative_focus_line - 1]
+    syntax.stylize_range(
+        f"bold on {ORGAN_FOCUS_BACKGROUND}",
+        (relative_focus_line, 0),
+        (relative_focus_line, len(focus_text)),
+    )
+    log.write(syntax)
     log.write(Text(f"\nWHAT IT DOES   {exhibit.mechanism}", style="#EAF4F4"))
     for note in exhibit.read_this:
         log.write(Text(f"WHY IT MATTERS {note}", style="#7EE787"))
