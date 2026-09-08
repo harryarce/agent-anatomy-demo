@@ -2,6 +2,8 @@
 
 Reviewed 2026-09-08 against [microsoft/agent-framework](https://github.com/microsoft/agent-framework/tree/a03bb909c694ad27f0b14d310d39e7f9e232ad39/python/samples), commit `a03bb909c694ad27f0b14d310d39e7f9e232ad39`.
 
+Follow-up: [reuse research and prioritized implementation recommendations](REUSE-RESEARCH.md), including Agent Governance Toolkit compatibility findings and other Microsoft-origin projects.
+
 ## Version Boundary
 
 - The demo's installed `agent-framework-core==1.14.0` and `agent-framework-foundry==1.11.0` passed all 53 recipe and show tests.
