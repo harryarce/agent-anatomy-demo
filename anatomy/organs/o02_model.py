@@ -2,13 +2,9 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from agent_framework import Agent
-from agent_framework.foundry import FoundryChatClient
-from azure.identity.aio import AzureCliCredential
-
 from anatomy.budget import Usage
 from anatomy.common import RunReport, load_report_replay
-from anatomy.llm import failure_summary, foundry_settings, usage_from_response
+from anatomy.llm import failure_summary, foundry_agent, foundry_settings, usage_from_response
 from anatomy.telemetry import timed_span
 
 STORY_BEAT = 0
@@ -41,16 +37,8 @@ async def run_live(*, replay: bool, trace: bool) -> ModelResult:
     if replay:
         return load_replay()
 
-    endpoint, model = foundry_settings()
-    credential = AzureCliCredential()
-    try:
-        agent = Agent(
-            client=FoundryChatClient(
-                project_endpoint=endpoint,
-                model=model,
-                credential=credential,
-            ),
-        )
+    _, model = foundry_settings()
+    async with foundry_agent() as agent:
         with timed_span("organ.model", enabled=trace) as timing:
             response = await agent.run(QUESTION)
         return ModelResult(
@@ -58,8 +46,6 @@ async def run_live(*, replay: bool, trace: bool) -> ModelResult:
             usage=usage_from_response(response, timing["latency_seconds"]),
             source=f"live Azure deployment {model}",
         )
-    finally:
-        await credential.close()
 
 
 async def run_report(

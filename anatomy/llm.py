@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+import asyncio
 import os
+from contextlib import asynccontextmanager
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import Any, AsyncIterator
 
 from agent_framework import Agent
 from agent_framework.foundry import FoundryChatClient
-from azure.identity.aio import AzureCliCredential
+from azure.identity import AzureCliCredential
 from dotenv import load_dotenv
 
 from anatomy.budget import Usage
@@ -20,6 +22,21 @@ load_dotenv(ENV_PATH if ENV_PATH.exists() else ROOT / ".env.example")
 
 DEFAULT_ENDPOINT = "https://haro-foundryai.services.ai.azure.com/api/projects/aiprj"
 DEFAULT_MODEL = "gpt-5.6-terra"
+AZURE_CLI_PROCESS_TIMEOUT_SECONDS = 30
+
+
+class AsyncAzureCliCredential:
+    def __init__(self) -> None:
+        self._credential = AzureCliCredential(process_timeout=AZURE_CLI_PROCESS_TIMEOUT_SECONDS)
+
+    async def get_token(self, *scopes: str, **kwargs: Any) -> Any:
+        return await asyncio.to_thread(self._credential.get_token, *scopes, **kwargs)
+
+    async def get_token_info(self, *scopes: str, **kwargs: Any) -> Any:
+        return await asyncio.to_thread(self._credential.get_token_info, *scopes, **kwargs)
+
+    async def close(self) -> None:
+        await asyncio.to_thread(self._credential.close)
 
 
 def foundry_settings() -> tuple[str, str]:
@@ -52,6 +69,26 @@ def failure_summary(exc: Exception) -> str:
     return type(exc).__name__
 
 
+@asynccontextmanager
+async def foundry_agent(*, instructions: str | None = None) -> AsyncIterator[Agent]:
+    endpoint, model = foundry_settings()
+    credential = AsyncAzureCliCredential()
+    client: FoundryChatClient | None = None
+    try:
+        client = FoundryChatClient(
+            project_endpoint=endpoint,
+            model=model,
+            credential=credential,
+        )
+        async with Agent(client=client, instructions=instructions) as agent:
+            yield agent
+    finally:
+        if client is not None:
+            await client.client.close()
+            await client.project_client.close()
+        await credential.close()
+
+
 async def grounded_synthesis(
     *,
     organ: str,
@@ -59,21 +96,14 @@ async def grounded_synthesis(
     evidence: list[str],
     trace: bool,
 ) -> tuple[str, Usage, str]:
-    endpoint, model = foundry_settings()
-    credential = AzureCliCredential()
-    try:
-        agent = Agent(
-            client=FoundryChatClient(
-                project_endpoint=endpoint,
-                model=model,
-                credential=credential,
-            ),
-            instructions=(
-                "You are Ada, a customer escalation agent. Use only the supplied evidence. "
-                "Return one concise sentence explaining what the evidence proves. "
-                "Do not invent facts, citations, actions, or outcomes."
-            ),
+    _, model = foundry_settings()
+    async with foundry_agent(
+        instructions=(
+            "You are Ada, a customer escalation agent. Use only the supplied evidence. "
+            "Return one concise sentence explaining what the evidence proves. "
+            "Do not invent facts, citations, actions, or outcomes."
         )
+    ) as agent:
         prompt = (
             f"Organ: {organ}\n"
             f"Customer question: {question}\n"
@@ -87,8 +117,6 @@ async def grounded_synthesis(
             usage_from_response(response, timing["latency_seconds"]),
             f"live Azure deployment {model}",
         )
-    finally:
-        await credential.close()
 
 
 async def enhance_report_with_llm(

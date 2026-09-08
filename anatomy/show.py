@@ -15,6 +15,7 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
+from textual.strip import Strip, StripRenderable
 from textual.widgets import Footer, RichLog, Static
 
 from anatomy.runner import ORGANS as REGISTERED_ORGANS
@@ -888,6 +889,7 @@ class CodeOverlay(ModalScreen[None]):
     """
 
     BINDINGS = [
+        Binding("c", "next_exhibit", "Next code", priority=True),
         Binding("x", "collapse", "Collapse", priority=True),
         Binding("escape", "collapse", "Collapse", priority=True),
         Binding("pageup", "scroll_up", "Code up", priority=True),
@@ -903,7 +905,7 @@ class CodeOverlay(ModalScreen[None]):
     def compose(self) -> ComposeResult:
         with Vertical(id="code-overlay"):
             yield RichLog(id="expanded-code", highlight=False, markup=False, wrap=True)
-            yield Static("X / Esc collapse   ·   Page Up / Page Down scroll", id="expanded-controls")
+            yield Static("C next exhibit   ·   X / Esc collapse   ·   Page Up / Page Down scroll", id="expanded-controls")
 
     def on_mount(self) -> None:
         _write_exhibit(
@@ -917,11 +919,86 @@ class CodeOverlay(ModalScreen[None]):
     def action_collapse(self) -> None:
         self.dismiss()
 
+    def action_next_exhibit(self) -> None:
+        exhibits = EXHIBITS.get(SCENES[self.app.scene_index].number, ())
+        next_position = self.position + 1
+        if next_position >= len(exhibits):
+            self.app.exhibit_index = None
+            self.app._render_scene()
+            self.dismiss()
+            return
+        self.position = next_position
+        self.exhibit = exhibits[next_position]
+        self.app.exhibit_index = next_position
+        log = self.query_one("#expanded-code", RichLog)
+        log.clear()
+        _write_exhibit(log, self.exhibit, self.position, self.total, expanded=True)
+
     def action_scroll_up(self) -> None:
         self.query_one("#expanded-code", RichLog).scroll_page_up()
 
     def action_scroll_down(self) -> None:
         self.query_one("#expanded-code", RichLog).scroll_page_down()
+
+
+class ResultsOverlay(ModalScreen[None]):
+    CSS = """
+    ResultsOverlay {
+        align: center middle;
+        background: rgba(2, 6, 9, 0.88);
+    }
+
+    #results-overlay {
+        width: 96%;
+        height: 94%;
+        padding: 1;
+        background: #020609;
+        border: heavy #7EE787;
+    }
+
+    #expanded-results {
+        height: 1fr;
+        scrollbar-color: #7EE787;
+        scrollbar-background: #102532;
+    }
+
+    #expanded-results-controls {
+        height: 2;
+        padding: 0 1;
+        color: #9FB7C2;
+        background: #0C1C29;
+    }
+    """
+
+    BINDINGS = [
+        Binding("x", "collapse", "Collapse", priority=True),
+        Binding("escape", "collapse", "Collapse", priority=True),
+        Binding("pageup", "scroll_up", "Results up", priority=True),
+        Binding("pagedown", "scroll_down", "Results down", priority=True),
+    ]
+
+    def __init__(self, results: tuple[Strip, ...]) -> None:
+        super().__init__()
+        self.results = results
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="results-overlay"):
+            yield RichLog(id="expanded-results", highlight=False, markup=False, wrap=True)
+            yield Static("X / Esc collapse   ·   Page Up / Page Down scroll", id="expanded-results-controls")
+
+    def on_mount(self) -> None:
+        log = self.query_one("#expanded-results", RichLog)
+        log.write(Text("EXPANDED RESULTS\n", style="bold #7EE787"))
+        log.write(StripRenderable(list(self.results)))
+
+    def action_collapse(self) -> None:
+        self.dismiss()
+
+    def action_scroll_up(self) -> None:
+        self.query_one("#expanded-results", RichLog).scroll_page_up()
+
+    def action_scroll_down(self) -> None:
+        self.query_one("#expanded-results", RichLog).scroll_page_down()
 
 
 class AnatomyShow(App[None]):
@@ -960,9 +1037,14 @@ class AnatomyShow(App[None]):
     }
 
     #eyebrow {
-        height: 2;
-        color: #F2CC60;
+        height: 3;
+        padding: 0 1;
+        color: #FFFFFF;
+        background: #102532;
+        border-left: thick #F2CC60;
+        border-bottom: heavy #F2CC60;
         text-style: bold;
+        content-align: left middle;
     }
 
     #scene-title {
@@ -1048,7 +1130,7 @@ class AnatomyShow(App[None]):
         Binding("right", "next", "Next", priority=True),
         Binding("space", "run_demo", "Run demo", priority=True),
         Binding("c", "toggle_code", "Show / hide code", priority=True),
-        Binding("x", "toggle_code_overlay", "Expand code", priority=True),
+        Binding("x", "toggle_overlay", "Expand view", priority=True),
         Binding("r", "toggle_mode", "Local / remote", priority=True),
         Binding("home", "first", "First", priority=True),
         Binding("end", "last", "Last", priority=True),
@@ -1064,6 +1146,7 @@ class AnatomyShow(App[None]):
         self.remote = remote
         self.running_demo = False
         self.exhibit_index: int | None = None
+        self.results_available = False
         self._cancel_requested = False
         self._process: asyncio.subprocess.Process | None = None
 
@@ -1088,10 +1171,17 @@ class AnatomyShow(App[None]):
 
     def _render_scene(self) -> None:
         scene = SCENES[self.scene_index]
+        self.results_available = False
         self.query_one("#brand", Static).update(
             f"AGENT ANATOMY LIVE   |   HARRY ARCE   |   SCENE {scene.number:02d}/{len(SCENES):02d}"
         )
-        self.query_one("#eyebrow", Static).update(scene.chapter)
+        chapter = Text()
+        act, separator, organ = scene.chapter.partition("|")
+        chapter.append(act.strip(), style="bold #071018 on #F2CC60")
+        if separator:
+            chapter.append(f"  {separator}  ", style="bold #FFFFFF")
+            chapter.append(organ.strip(), style="bold #071018 on #F2CC60")
+        self.query_one("#eyebrow", Static).update(chapter)
         self.query_one("#scene-title", Static).update(scene.title)
         role = self.query_one("#organ-role", Static)
         role_text = self._organ_highlight_text(scene)
@@ -1178,6 +1268,8 @@ class AnatomyShow(App[None]):
             status = "Presenter scene"
         if self.exhibit_index is not None:
             code = "C advances code  |  X expands"
+        elif self.results_available:
+            code = "C shows code  |  X expands results"
         else:
             code = "C shows code" if EXHIBITS.get(scene.number) else "no code exhibit"
         self.query_one("#controls", Static).update(
@@ -1185,6 +1277,9 @@ class AnatomyShow(App[None]):
         )
 
     def action_toggle_code(self) -> None:
+        if isinstance(self.screen, CodeOverlay):
+            self.screen.action_next_exhibit()
+            return
         exhibits = EXHIBITS.get(SCENES[self.scene_index].number, ())
         if self.running_demo or not exhibits:
             return
@@ -1195,6 +1290,7 @@ class AnatomyShow(App[None]):
             self._render_scene()
             return
         self._render_exhibit(exhibits[self.exhibit_index], self.exhibit_index, len(exhibits))
+        self.push_screen(CodeOverlay(exhibits[self.exhibit_index], self.exhibit_index, len(exhibits)))
 
     def _render_exhibit(self, exhibit: CodeExhibit, position: int, total: int) -> None:
         log = self.query_one("#console", RichLog)
@@ -1205,14 +1301,18 @@ class AnatomyShow(App[None]):
         log.write(Text(f"\nPress X to expand. Press C for the next exhibit. {next_action}.", style="dim"))
         self._render_controls()
 
-    def action_toggle_code_overlay(self) -> None:
-        if isinstance(self.screen, CodeOverlay):
+    def action_toggle_overlay(self) -> None:
+        if isinstance(self.screen, (CodeOverlay, ResultsOverlay)):
             self.screen.dismiss()
             return
         exhibits = EXHIBITS.get(SCENES[self.scene_index].number, ())
-        if self.running_demo or self.exhibit_index is None or not exhibits:
+        if self.running_demo:
             return
-        self.push_screen(CodeOverlay(exhibits[self.exhibit_index], self.exhibit_index, len(exhibits)))
+        if self.exhibit_index is not None and exhibits:
+            self.push_screen(CodeOverlay(exhibits[self.exhibit_index], self.exhibit_index, len(exhibits)))
+        elif self.results_available:
+            console = self.query_one("#console", RichLog)
+            self.push_screen(ResultsOverlay(tuple(console.lines)))
 
     def action_scroll_up(self) -> None:
         self.query_one("#console", RichLog).scroll_page_up()
@@ -1276,7 +1376,9 @@ class AnatomyShow(App[None]):
         finally:
             self._process = None
             self.running_demo = False
+            self.results_available = True
             self._render_controls()
+            await self.push_screen(ResultsOverlay(tuple(log.lines)))
 
     async def _run_steps(self, steps: tuple[DemoStep, ...], log: RichLog, *, remote: bool = False) -> bool:
         for demo_step in steps:
@@ -1335,7 +1437,7 @@ class AnatomyShow(App[None]):
         return True
 
     def action_cancel_demo(self) -> None:
-        if isinstance(self.screen, CodeOverlay):
+        if isinstance(self.screen, (CodeOverlay, ResultsOverlay)):
             self.screen.dismiss()
             return
         if self._process is not None and self._process.returncode is None:

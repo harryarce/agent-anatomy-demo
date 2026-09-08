@@ -13,7 +13,7 @@ from textual.widgets import RichLog, Static
 
 from anatomy import runner
 from anatomy.common import load_report_replay
-from anatomy.show import ANATOMY, EXHIBITS, ORGAN_HIGHLIGHTS, REPOSITORY_URL, ROOT, SCENES, AnatomyShow, CodeOverlay, DemoStep, load_exhibit, repository_qr_text, stack_report
+from anatomy.show import ANATOMY, EXHIBITS, ORGAN_HIGHLIGHTS, REPOSITORY_URL, ROOT, SCENES, AnatomyShow, CodeOverlay, DemoStep, ResultsOverlay, load_exhibit, repository_qr_text, stack_report
 from agent_framework import Agent, InMemoryHistoryProvider, ToolApprovalMiddleware, Workflow
 from examples import organ_recipes
 
@@ -278,6 +278,7 @@ class ShowInteractionTests(unittest.IsolatedAsyncioTestCase):
 
             await pilot.press("c")
             self.assertEqual(app.exhibit_index, 0)
+            self.assertIsInstance(app.screen, CodeOverlay)
             self.assertIn("CODE EXHIBIT", self.rendered_log(app))
             self.assertIn("DEVELOPER RECIPE", self.rendered_log(app))
             self.assertIn("build_model_agent", self.rendered_log(app))
@@ -285,11 +286,14 @@ class ShowInteractionTests(unittest.IsolatedAsyncioTestCase):
             self.assertIn("COPILOT STUDIO", self.rendered_log(app))
 
             await pilot.press("c")
+            await pilot.pause()
             self.assertIsNone(app.exhibit_index)
+            self.assertNotIsInstance(app.screen, CodeOverlay)
             self.assertNotIn("CODE EXHIBIT", self.rendered_log(app))
 
             await pilot.press("right")
             await pilot.press("c")
+            self.assertIsInstance(app.screen, CodeOverlay)
             self.assertIn("add_instructions", self.rendered_log(app))
             self.assertIn("instructions=", self.rendered_log(app))
 
@@ -300,7 +304,6 @@ class ShowInteractionTests(unittest.IsolatedAsyncioTestCase):
             await pilot.press("c")
             inline_lines = len(app.query_one("#console", RichLog).lines)
 
-            await pilot.press("x")
             self.assertIsInstance(app.screen, CodeOverlay)
             expanded_log = app.screen.query_one("#expanded-code", RichLog)
             self.assertGreater(len(expanded_log.lines), inline_lines)
@@ -314,6 +317,43 @@ class ShowInteractionTests(unittest.IsolatedAsyncioTestCase):
             await pilot.press("escape")
             await pilot.pause()
             self.assertNotIsInstance(app.screen, CodeOverlay)
+
+    async def test_x_expands_and_collapses_completed_results(self) -> None:
+        app = AnatomyShow(start_scene=2)
+
+        async with app.run_test(size=(100, 30)) as pilot:
+            await app.action_run_demo()
+            inline_results = self.rendered_log(app)
+            self.assertIn("EVIDENCE COMPLETE", inline_results)
+            inline_firing_styles = [
+                segment.style
+                for line in app.query_one("#console", RichLog).lines
+                if "ORGANS FIRING" in line.text
+                for segment in line
+                if segment.text.strip()
+            ]
+
+            self.assertIsInstance(app.screen, ResultsOverlay)
+            expanded_log = app.screen.query_one("#expanded-results", RichLog)
+            self.assertIn("EVIDENCE COMPLETE", "\n".join(line.text for line in expanded_log.lines))
+            expanded_firing_styles = [
+                segment.style
+                for line in expanded_log.lines
+                if "ORGANS FIRING" in line.text
+                for segment in line
+                if segment.text.strip()
+            ]
+            self.assertTrue(inline_firing_styles)
+            self.assertEqual(expanded_firing_styles, inline_firing_styles)
+
+            await pilot.press("x")
+            await pilot.pause()
+            self.assertNotIsInstance(app.screen, ResultsOverlay)
+
+            await pilot.press("x")
+            await pilot.press("escape")
+            await pilot.pause()
+            self.assertNotIsInstance(app.screen, ResultsOverlay)
 
     async def test_each_opening_organ_has_a_prominent_applicability_spotlight(self) -> None:
         app = AnatomyShow(start_scene=2)
@@ -338,19 +378,21 @@ class ShowInteractionTests(unittest.IsolatedAsyncioTestCase):
             self.assertIn("ORGANS FIRING:  Model", model_evidence)
             self.assertNotIn("ORGANS FIRING:  Instructions", model_evidence)
 
+            await pilot.press("x")
             await pilot.press("right")
             await app.action_run_demo()
             instruction_evidence = self.rendered_log(app)
             self.assertIn("ORGANS FIRING:  Instructions", instruction_evidence)
             self.assertNotIn("ORGANS FIRING:  Model", instruction_evidence)
 
-    async def test_navigation_hides_an_open_exhibit(self) -> None:
+    async def test_navigation_after_collapsing_hides_an_open_exhibit(self) -> None:
         app = AnatomyShow(start_scene=5)
 
         async with app.run_test(size=(120, 40)) as pilot:
             await pilot.press("c")
             self.assertEqual(app.exhibit_index, 0)
 
+            await pilot.press("x")
             await pilot.press("right")
             self.assertIsNone(app.exhibit_index)
             self.assertNotIn("CODE EXHIBIT", self.rendered_log(app))
@@ -396,6 +438,7 @@ class ShowInteractionTests(unittest.IsolatedAsyncioTestCase):
         async with app.run_test(size=(120, 40)):
             await app.action_run_demo()
             self.assertIn("Plan validation (before execution)", self.rendered_log(app))
+            app.screen.dismiss()
             app.scene_index = 17
             app._render_scene()
             await app.action_run_demo()

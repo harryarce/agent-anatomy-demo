@@ -6,7 +6,7 @@ import io
 import json
 import unittest
 from argparse import Namespace
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from pathlib import Path
 
 from rich.console import Console
@@ -309,6 +309,44 @@ class OrganMetadataTests(unittest.TestCase):
         self.assertEqual(enhanced.status, "ok")
         self.assertEqual(enhanced.output[0], "SQLite lookup: order 4471")
         self.assertIn("DETERMINISTIC FALLBACK", enhanced.labels)
+
+    def test_async_cli_credential_uses_threaded_sync_client(self) -> None:
+        from anatomy.llm import AsyncAzureCliCredential
+
+        with patch("anatomy.llm.AzureCliCredential") as credential_type:
+            credential_type.return_value.get_token.return_value = "token"
+            credential = AsyncAzureCliCredential()
+            token = asyncio.run(credential.get_token("scope"))
+            asyncio.run(credential.close())
+
+        credential_type.assert_called_once_with(process_timeout=30)
+        credential_type.return_value.get_token.assert_called_once_with("scope")
+        credential_type.return_value.close.assert_called_once_with()
+        self.assertEqual(token, "token")
+
+    def test_foundry_agent_closes_clients_after_failure(self) -> None:
+        from anatomy.llm import foundry_agent
+
+        chat_client = MagicMock()
+        chat_client.client.close = AsyncMock()
+        chat_client.project_client.close = AsyncMock()
+        credential = MagicMock()
+        credential.close = AsyncMock()
+
+        async def fail_inside_agent() -> None:
+            async with foundry_agent():
+                raise RuntimeError("offline")
+
+        with (
+            patch("anatomy.llm.AsyncAzureCliCredential", return_value=credential),
+            patch("anatomy.llm.FoundryChatClient", return_value=chat_client),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "offline"):
+                asyncio.run(fail_inside_agent())
+
+        chat_client.client.close.assert_awaited_once_with()
+        chat_client.project_client.close.assert_awaited_once_with()
+        credential.close.assert_awaited_once_with()
 
 
 class LocalScenarioDataTests(unittest.TestCase):
