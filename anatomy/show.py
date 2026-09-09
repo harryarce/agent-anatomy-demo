@@ -954,7 +954,7 @@ class CodeOverlay(ModalScreen[None]):
 
     def compose(self) -> ComposeResult:
         with Vertical(id="code-overlay"):
-            yield RichLog(id="expanded-code", highlight=False, markup=False, wrap=True)
+            yield RichLog(id="expanded-code", highlight=False, markup=False, wrap=True, auto_scroll=False)
             yield Static("C next exhibit   ·   X / Esc collapse   ·   Page Up / Page Down scroll", id="expanded-controls")
 
     def on_mount(self) -> None:
@@ -1033,7 +1033,7 @@ class ResultsOverlay(ModalScreen[None]):
 
     def compose(self) -> ComposeResult:
         with Vertical(id="results-overlay"):
-            yield RichLog(id="expanded-results", highlight=False, markup=False, wrap=True)
+            yield RichLog(id="expanded-results", highlight=False, markup=False, wrap=True, auto_scroll=False)
             yield Static("X / Esc collapse   ·   Page Up / Page Down scroll", id="expanded-results-controls")
 
     def on_mount(self) -> None:
@@ -1062,7 +1062,8 @@ class AnatomyShow(App[None]):
     }
 
     #brand {
-        height: 3;
+        height: auto;
+        min-height: 3;
         padding: 1 2 0 2;
         background: #0C1C29;
         border-bottom: heavy #50E6FF;
@@ -1169,6 +1170,51 @@ class AnatomyShow(App[None]):
         color: #9FB7C2;
     }
 
+    #stage.opening {
+        padding: 0 2;
+    }
+
+    #stage.opening #eyebrow {
+        height: 1;
+        border-bottom: none;
+    }
+
+    #stage.opening #scene-title {
+        height: 2;
+    }
+
+    #stage.opening #message, #stage.opening #proof {
+        min-height: 1;
+        margin-bottom: 0;
+    }
+
+    #stage.opening #proof {
+        margin-top: 1;
+    }
+
+    #stage.opening #landing {
+        min-height: 1;
+        margin-top: 0;
+    }
+
+    #stage.opening #console {
+        padding: 0 1;
+    }
+
+    Screen.short-opening #brand {
+        height: 1;
+        min-height: 1;
+        padding: 0 2;
+    }
+
+    Screen.short-opening #stage.opening #scene-title {
+        height: 1;
+    }
+
+    Screen.short-opening #stage.opening #proof {
+        margin-top: 0;
+    }
+
     Footer {
         height: 1;
         background: #102532;
@@ -1219,18 +1265,33 @@ class AnatomyShow(App[None]):
     def on_mount(self) -> None:
         self._render_scene()
 
+    def on_resize(self) -> None:
+        self.screen.set_class(self.scene_index == 0 and self.size.height < 28, "short-opening")
+
     def _render_scene(self) -> None:
         scene = SCENES[self.scene_index]
+        self.query_one("#stage").set_class(scene.number == 1, "opening")
+        self.screen.set_class(scene.number == 1 and self.size.height < 28, "short-opening")
         self.results_available = False
-        self.query_one("#brand", Static).update(
+        brand = Text(
             f"AGENT ANATOMY LIVE   |   HARRY ARCE   |   SCENE {scene.number:02d}/{len(SCENES):02d}"
         )
         chapter = Text()
         act, separator, organ = scene.chapter.partition("|")
-        chapter.append(act.strip(), style="bold #071018 on #F2CC60")
-        if separator:
-            chapter.append(f"  {separator}  ", style="bold #FFFFFF")
-            chapter.append(organ.strip(), style="bold #071018 on #F2CC60")
+        act_names = {
+            "ACT I": "UNDERSTANDING",
+            "ACT II": "ACTING AND REMEMBERING",
+            "ACT III": "CONTROL AND VISIBILITY",
+            "ACT IV": "LIMITS AND RECOVERY",
+            "ACT V": "EXPERTISE AND IMPROVEMENT",
+            "FINAL ACT": "EVENT-DRIVEN AUTONOMY",
+        }
+        act_name = act_names.get(act.strip())
+        if act_name:
+            brand.append("   |   ")
+            brand.append(f"{act.strip()}: {act_name}", style="bold #071018 on #F2CC60")
+        self.query_one("#brand", Static).update(brand)
+        chapter.append(organ.strip() if separator else act.strip(), style="bold #071018 on #F2CC60")
         self.query_one("#eyebrow", Static).update(chapter)
         self.query_one("#scene-title", Static).update(scene.title)
         role = self.query_one("#organ-role", Static)
@@ -1365,9 +1426,15 @@ class AnatomyShow(App[None]):
             self.push_screen(ResultsOverlay(tuple(console.lines)))
 
     def action_scroll_up(self) -> None:
+        if isinstance(self.screen, (CodeOverlay, ResultsOverlay)):
+            self.screen.action_scroll_up()
+            return
         self.query_one("#console", RichLog).scroll_page_up()
 
     def action_scroll_down(self) -> None:
+        if isinstance(self.screen, (CodeOverlay, ResultsOverlay)):
+            self.screen.action_scroll_down()
+            return
         self.query_one("#console", RichLog).scroll_page_down()
 
     def action_previous(self) -> None:

@@ -249,6 +249,39 @@ class StackReportTests(unittest.TestCase):
 
 
 class ShowInteractionTests(unittest.IsolatedAsyncioTestCase):
+    async def test_scene_heading_shows_organ_without_act_prefix(self) -> None:
+        app = AnatomyShow(start_scene=6)
+        async with app.run_test(size=(120, 40)) as pilot:
+            heading = app.query_one("#eyebrow", Static)
+            self.assertEqual(heading.render().plain, "TOOL DISCOVERY")
+            self.assertIn("ACT II: ACTING AND REMEMBERING", app.query_one("#brand", Static).render().plain)
+
+            app.scene_index = 11
+            app._render_scene()
+            await pilot.pause()
+            self.assertEqual(heading.render().plain, "METABOLISM")
+            await pilot.press("home")
+            self.assertEqual(heading.render().plain, "THE DISSECTION BEGINS")
+            await pilot.press("end")
+            self.assertEqual(heading.render().plain, "TAKE IT WITH YOU")
+
+    async def test_title_bar_highlights_current_act_next_to_scene(self) -> None:
+        app = AnatomyShow(start_scene=9)
+        async with app.run_test(size=(80, 30)) as pilot:
+            await pilot.pause()
+            brand = app.query_one("#brand", Static)
+            title = brand.render()
+            self.assertIn("SCENE 09/20   |   ACT III: CONTROL AND VISIBILITY", title.plain)
+            highlight = title.get_style_at_offset(title.plain.index("ACT III"))
+            self.assertEqual(highlight.background.hex, "#F2CC60")
+            self.assertTrue(highlight.bold)
+            self.assertGreaterEqual(brand.content_size.height, 2)
+
+            await pilot.press("right", "right", "right")
+            self.assertIn("ACT IV: LIMITS AND RECOVERY", brand.render().plain)
+            await pilot.press("home")
+            self.assertNotIn("ACT IV", brand.render().plain)
+
     @staticmethod
     def rendered_log(app: AnatomyShow) -> str:
         log = app.query_one("#console", RichLog)
@@ -315,6 +348,12 @@ class ShowInteractionTests(unittest.IsolatedAsyncioTestCase):
             self.assertIsInstance(app.screen, CodeOverlay)
             expanded_log = app.screen.query_one("#expanded-code", RichLog)
             self.assertGreater(len(expanded_log.lines), inline_lines)
+            await pilot.pause()
+            self.assertEqual(expanded_log.scroll_y, 0)
+            self.assertGreater(expanded_log.max_scroll_y, 0)
+            await pilot.press("pagedown")
+            await pilot.pause()
+            self.assertGreater(expanded_log.scroll_y, 0)
 
             await pilot.press("x")
             await pilot.pause()
@@ -322,6 +361,8 @@ class ShowInteractionTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(app.exhibit_index, 0)
 
             await pilot.press("x")
+            await pilot.pause()
+            self.assertEqual(app.screen.query_one("#expanded-code", RichLog).scroll_y, 0)
             await pilot.press("escape")
             await pilot.pause()
             self.assertNotIsInstance(app.screen, CodeOverlay)
@@ -344,6 +385,12 @@ class ShowInteractionTests(unittest.IsolatedAsyncioTestCase):
             self.assertIsInstance(app.screen, ResultsOverlay)
             expanded_log = app.screen.query_one("#expanded-results", RichLog)
             self.assertIn("EVIDENCE COMPLETE", "\n".join(line.text for line in expanded_log.lines))
+            await pilot.pause()
+            self.assertEqual(expanded_log.scroll_y, 0)
+            self.assertGreater(expanded_log.max_scroll_y, 0)
+            await pilot.press("pagedown")
+            await pilot.pause()
+            self.assertGreater(expanded_log.scroll_y, 0)
             expanded_firing_styles = [
                 segment.style
                 for line in expanded_log.lines
@@ -359,6 +406,8 @@ class ShowInteractionTests(unittest.IsolatedAsyncioTestCase):
             self.assertNotIsInstance(app.screen, ResultsOverlay)
 
             await pilot.press("x")
+            await pilot.pause()
+            self.assertEqual(app.screen.query_one("#expanded-results", RichLog).scroll_y, 0)
             await pilot.press("escape")
             await pilot.pause()
             self.assertNotIsInstance(app.screen, ResultsOverlay)
@@ -415,6 +464,27 @@ class ShowInteractionTests(unittest.IsolatedAsyncioTestCase):
 
             await pilot.press("right")
             self.assertNotIn("a n a t o m y", self.rendered_log(app))
+
+    async def test_opening_banner_fits_laptop_terminals_without_scrolling(self) -> None:
+        for size in ((100, 24), (120, 30), (140, 40)):
+            with self.subTest(size=size):
+                app = AnatomyShow()
+                async with app.run_test(size=size) as pilot:
+                    await pilot.pause()
+                    log = app.query_one("#console", RichLog)
+                    self.assertEqual(log.max_scroll_y, 0)
+                    self.assertEqual(log.max_scroll_x, 0)
+                    self.assertLessEqual(len(log.lines), log.scrollable_content_region.height)
+                    self.assertLessEqual(app.query_one("#landing").region.bottom, size[1] - 3)
+                    self.assertTrue(app.query_one("#stage").has_class("opening"))
+
+                    await pilot.press("right")
+                    self.assertFalse(app.query_one("#stage").has_class("opening"))
+                    self.assertEqual(app.query_one("#scene-title").size.height, 3)
+
+                    await pilot.press("home")
+                    await pilot.pause()
+                    self.assertEqual(log.max_scroll_y, 0)
 
     async def test_complete_anatomy_rail_names_all_registered_organs(self) -> None:
         app = AnatomyShow(start_scene=19)
