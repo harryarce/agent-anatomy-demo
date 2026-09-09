@@ -34,22 +34,22 @@ class Organ:
 
 
 ORGANS = (
-    Organ(1, "instructions", 0, "ready", "GA", "anatomy.organs.o01_instructions"),
-    Organ(2, "model", 0, "ready", "GA", "anatomy.organs.o02_model"),
+    Organ(1, "model", 0, "ready", "GA", "anatomy.organs.o02_model"),
+    Organ(2, "instructions", 0, "ready", "GA", "anatomy.organs.o01_instructions"),
     Organ(3, "knowledge", 1, "ready", "GA", "anatomy.organs.o03_knowledge"),
     Organ(4, "tools", 2, "ready", "GA", "anatomy.organs.o04_tools"),
-    Organ(5, "skills", 11, "ready", "PREVIEW", "anatomy.organs.o05_skills"),
-    Organ(6, "memory", 4, "ready", "LOCAL IMPLEMENTATION", "anatomy.organs.o06_memory"),
-    Organ(7, "guardrails", 5, "ready", "LOCAL IMPLEMENTATION", "anatomy.organs.o07_guardrails"),
-    Organ(8, "orchestration", 6, "ready", "LOCAL IMPLEMENTATION", "anatomy.organs.o08_orchestration"),
-    Organ(9, "identity", 7, "ready", "SIMULATED", "anatomy.organs.o09_identity"),
-    Organ(10, "observability", 8, "ready", "LOCAL IMPLEMENTATION", "anatomy.organs.o10_observability"),
-    Organ(11, "reflex arc", 12, "ready", "LOCAL IMPLEMENTATION", "anatomy.organs.o11_reflex_arc"),
-    Organ(12, "planning", 13, "ready", "LOCAL IMPLEMENTATION", "anatomy.organs.o12_planning"),
-    Organ(13, "spine", 10, "ready", "LOCAL IMPLEMENTATION", "anatomy.organs.o13_spine"),
-    Organ(14, "metabolism", 9, "ready", "LOCAL IMPLEMENTATION", "anatomy.organs.o14_metabolism"),
-    Organ(15, "beliefs", 14, "ready", "LOCAL IMPLEMENTATION", "anatomy.organs.o15_beliefs"),
-    Organ(16, "learning", 11, "ready", "LOCAL IMPLEMENTATION", "anatomy.organs.o16_learning"),
+    Organ(5, "memory", 4, "ready", "LOCAL IMPLEMENTATION", "anatomy.organs.o06_memory"),
+    Organ(6, "guardrails", 5, "ready", "LOCAL IMPLEMENTATION", "anatomy.organs.o07_guardrails"),
+    Organ(7, "orchestration", 6, "ready", "LOCAL IMPLEMENTATION", "anatomy.organs.o08_orchestration"),
+    Organ(8, "identity", 7, "ready", "SIMULATED", "anatomy.organs.o09_identity"),
+    Organ(9, "observability", 8, "ready", "LOCAL IMPLEMENTATION", "anatomy.organs.o10_observability"),
+    Organ(10, "metabolism", 9, "ready", "LOCAL IMPLEMENTATION", "anatomy.organs.o14_metabolism"),
+    Organ(11, "spine", 10, "ready", "LOCAL IMPLEMENTATION", "anatomy.organs.o13_spine"),
+    Organ(12, "skills", 11, "ready", "PREVIEW", "anatomy.organs.o05_skills"),
+    Organ(13, "learning", 11, "ready", "LOCAL IMPLEMENTATION", "anatomy.organs.o16_learning"),
+    Organ(14, "reflex arc", 12, "ready", "LOCAL IMPLEMENTATION", "anatomy.organs.o11_reflex_arc"),
+    Organ(15, "planning", 13, "ready", "LOCAL IMPLEMENTATION", "anatomy.organs.o12_planning"),
+    Organ(16, "beliefs", 14, "ready", "LOCAL IMPLEMENTATION", "anatomy.organs.o15_beliefs"),
 )
 
 ORGAN_BY_NAME = {organ.name: organ for organ in ORGANS}

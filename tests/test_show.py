@@ -35,6 +35,19 @@ def _code_density(snippet: str) -> float:
 
 
 class ShowRouteTests(unittest.TestCase):
+    def test_organ_numbers_follow_first_demo_appearance(self) -> None:
+        numbers = list(dict.fromkeys(number for scene in SCENES if scene.safe_steps for number in scene.organs))
+        self.assertEqual(numbers, list(range(1, 17)))
+        names = ["Model", "Instructions", "Knowledge", "Tools", "Memory", "Guardrails",
+                 "Orchestration", "Identity", "Observability", "Metabolism", "Spine",
+                 "Skills", "Learning", "Reflex Arc", "Planning", "Beliefs"]
+        self.assertEqual([(number, name) for number, name, _ in ANATOMY], list(enumerate(names, 1)))
+        for index, name in enumerate(names, 1):
+            self.assertEqual(runner.ORGAN_BY_NAME[name.lower()].number, index)
+        app = AnatomyShow(start_scene=2)
+        self.assertIn("01  Model  FIRING", app._anatomy_text(SCENES[1]).plain)
+        self.assertIn("02  Instructions", app._anatomy_text(SCENES[1]).plain)
+
     def test_every_organ_has_an_applicability_highlight(self) -> None:
         self.assertEqual(set(ORGAN_HIGHLIGHTS), set(range(1, 17)))
         for highlight in ORGAN_HIGHLIGHTS.values():
@@ -45,8 +58,8 @@ class ShowRouteTests(unittest.TestCase):
     def test_opening_runs_model_and_instructions_as_separate_scenes(self) -> None:
         self.assertEqual(runner.BEAT_SEQUENCE[0], ["model", "instructions"])
         model_demo, instructions_demo = SCENES[1:3]
-        self.assertEqual(model_demo.organs, (2,))
-        self.assertEqual(instructions_demo.organs, (1,))
+        self.assertEqual(model_demo.organs, (1,))
+        self.assertEqual(instructions_demo.organs, (2,))
         self.assertEqual(model_demo.safe_steps[0].args[:2], ("demo", "model"))
         self.assertEqual(instructions_demo.safe_steps[0].args[:2], ("demo", "instructions"))
         self.assertEqual(load_report_replay("model").firing, ["Model"])
@@ -62,8 +75,8 @@ class ShowRouteTests(unittest.TestCase):
         self.assertEqual(demonstrated, implemented)
 
     def test_planning_and_beliefs_are_executable_scenes(self) -> None:
-        planning = next(scene for scene in SCENES if scene.organs == (12,))
-        beliefs = next(scene for scene in SCENES if scene.organs == (15,))
+        planning = next(scene for scene in SCENES if scene.organs == (15,))
+        beliefs = next(scene for scene in SCENES if scene.organs == (16,))
 
         self.assertTrue(planning.safe_steps)
         self.assertTrue(beliefs.safe_steps)

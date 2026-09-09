@@ -6,9 +6,9 @@ from rich.text import Text
 ACCENT = "#50E6FF"
 DANGER = "#FF4D6D"
 ORGANS = (
-    "Instructions", "Model", "Knowledge", "Tools", "Skills", "Memory",
-    "Guardrails", "Orchestration", "Identity", "Observability", "Reflex Arc",
-    "Planning", "Spine", "Metabolism", "Beliefs", "Learning",
+    "Model", "Instructions", "Knowledge", "Tools", "Memory", "Guardrails",
+    "Orchestration", "Identity", "Observability", "Metabolism", "Spine",
+    "Skills", "Learning", "Reflex Arc", "Planning", "Beliefs",
 )
 
 
